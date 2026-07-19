@@ -1,46 +1,46 @@
 ---
-name: Bug report
-about: Something broke — qt_build failed, a tool returned a confusing message, etc.
+name: Bug 报告
+about: 出问题了——qt_build 失败、某个工具返回了看不懂的提示等
 title: "[bug] "
 labels: ["bug"]
 ---
 
-## What happened
+## 发生了什么
 
-<!-- A clear, one-paragraph description of the bug. -->
+<!-- 用一段话说清楚 bug。 -->
 
-## Reproduction steps
+## 复现步骤
 
-1. (call this tool with these arguments)
-2. (then this tool)
-3. (and saw this output)
+1. （用这些参数调这个工具）
+2. （然后调这个工具）
+3. （看到这个输出）
 
-## Expected output
+## 预期输出
 
-<!-- What you expected to see instead. -->
+<!-- 你期望看到什么。 -->
 
-## Actual output
+## 实际输出
 
 ```
-<paste the tool output here, including any "--- json ---" trailer>
+<把工具输出粘在这儿，包括任何 "--- json ---" 段>
 ```
 
-## Environment
+## 环境
 
-- Windows version: (e.g. Windows 11 23H2)
-- Python version: (`python --version`)
-- Qt install path: (`echo %QT_MCP_QT_ROOT%` or your `.mcp.json` `env` block)
-- qt-mcp version: (`python -c "import server; print(server.__version__)"`)
-- Which tools are involved:
+- Windows 版本：（例如 Windows 11 23H2）
+- Python 版本：（`python --version`）
+- Qt 安装路径：（`echo %QT_MCP_QT_ROOT%` 或你的 `.mcp.json` 的 `env` 块）
+- qt-mcp 版本：（`python -c "import server; print(server.__version__)"`）
+- 涉及哪些工具：
 
-## Logs
+## 日志
 
-If you ran `qt_build` and it failed, please also paste the output of:
+如果你跑了 `qt_build` 失败，请把下面输出也粘上来：
 
 ```
 python -c "import server; print(open(r'<project_dir>\.qt_mcp_last_build.log').read())"
 ```
 
-## Anything else?
+## 其它
 
-<!-- Add screenshots, links to your project repo, etc. -->
+<!-- 加截图、项目 repo 链接等。 -->
