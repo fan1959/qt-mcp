@@ -308,35 +308,9 @@ A: `set QT_MCP_SANDBOX=D:/my_projects`，所有工具自动限制在这棵树下
 **Q: e2e_v<N>.py 测试有 QT_MCP_JSON 依赖怎么隔离？**
 A: 套件顶部加 `pytest.fixture(autouse=True)` 设 `QT_MCP_JSON=1`，用 `_split_json()` helper 解析。
 
-## 致谢与借鉴
-
-本项目借鉴 / 参考以下资源：
-
-- **[0xCarbon/qt-mcp](https://github.com/0xCarbon/qt-mcp)**：runtime introspection 套件（`qt_widget_introspect` / `qt_runtime_props` / `qt_console_messages` / `qt_layout_check` / `qt_screenshot_diff`）的核心 API 设计参考
-- **SCU Wiki Qt 课件**：大一 C/C++ 实习的 Qt 基础教学材料
-- **JB51《Qt 快速入门系列教程》**：62 篇教程 PDF，提供 C++/Qt API 用法参考
-
-## 添加新工具
-
-参考最近新增的工具流程：
-
-1. 在 `server.py` 合适位置插入 Pydantic Input + `@mcp.tool` 函数
-2. 加 e2e 测试到 `tests/full/e2e_new_tools_v<N>.py`
-3. 更新 [README.md](README.md) 工具表 + [CHANGELOG.md](CHANGELOG.md)
-4. 跑 `pytest -q` 验证 + 新套件全 PASS
-5. 提醒用户重启 Claude Code（stdio MCP server 缓存工具列表，加完要重启才生效）
-
 ## 协议
 
 MIT。可随便用、商用、改源码、闭源分发。详见 [LICENSE](LICENSE)。
-
-## 贡献
-
-欢迎 PR。提交前请确认：
-- 新功能有 Pydantic Input + 完整 docstring + 至少 5 个 e2e 测试
-- 现有 pytest 全 PASS
-- 更新 [README.md](README.md) 工具表 + [CHANGELOG.md](CHANGELOG.md)
-- `.github/PULL_REQUEST_TEMPLATE.md` 检查清单全勾
 
 ## 仓库
 
