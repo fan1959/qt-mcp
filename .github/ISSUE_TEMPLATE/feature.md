@@ -1,29 +1,28 @@
 ---
-name: Feature request
-about: Suggest a new tool, a new scaffold template, or a new flag on an existing tool.
+name: 功能请求
+about: 建议新工具、新模板，或现有工具的新参数
 title: "[feature] "
 labels: ["enhancement"]
 ---
 
-## What's missing?
+## 缺什么？
 
-<!-- One sentence: which workflow is awkward today, and what tool/flag would fix it. -->
+<!-- 一句话：现在哪个流程不顺，加什么工具/参数能修。 -->
 
-## Proposed tool / flag
+## 提议的工具 / 参数
 
-<!-- Name + one-paragraph description + signature. Example: -->
+<!-- 名字 + 一段话描述 + 签名。例如： -->
 
-> `qt_diff(project_a, project_b)` — compare two `.pro` files + their referenced
-> sources and report differing SOURCES, FORMS, RESOURCES, plus the SHA1 of each.
+> `qt_diff(project_a, project_b)` — 比较两个 `.pro` 文件及它们引用的源码，报告 SOURCES、FORMS、RESOURCES 的差异，加每个文件的 SHA1。
 
-## Why is this useful?
+## 为什么有用？
 
-<!-- A real-world scenario that hits this gap. -->
+<!-- 一个真实场景撞上了这个缺口。 -->
 
-## Alternatives considered
+## 考虑过的替代方案
 
-<!-- Did you consider a workaround using existing tools? Why is it not enough? -->
+<!-- 想过用现有工具绕吗？为什么不够？ -->
 
-## Anything else?
+## 其它
 
-<!-- Mockup, link to upstream issue, related Qt docs, etc. -->
+<!-- 草图、上游 issue 链接、相关 Qt 文档等。 -->
