@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Secrets / local config
+.env
+.env.local
+*.local.json
+
+# Qt / MinGW build artifacts (never upload compiled binaries)
+debug/
+release/
+build-*/
+build/
+*.exe
+*.dll
+*.lib
+*.a
+*.o
+*.obj
+*.so
+*.dylib
+moc_*.cpp
+moc_*.h
+moc_*.obj
+ui_*.h
+qrc_*.cpp
+qrc_*.obj
+Makefile
+Makefile.*
+.qmake.stash
+.qmake.cache
+.qt_mcp_last_build.log
+
+# qt-mcp local data (53 MB docs index, sandbox temp)
+docs_data/*.db
+.tmp/
+.input_recordings/
+*.bak

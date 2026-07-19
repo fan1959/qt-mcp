@@ -1,0 +1,15 @@
+{
+  "_comment": "Example .mcp.json for the qt-mcp examples folder. Copy/merge into your Claude Code config (e.g. ~/.claude.json or .mcp.json at the project you want to drive).",
+  "mcpServers": {
+    "qt": {
+      "command": "python",
+      "args": ["<absolute path>\\qt-mcp\\server.py"],
+      "transport": "stdio",
+      "env": {
+        "QT_MCP_QT_ROOT":   "E:\\Download_tools\\QT\\5.14.2\\mingw73_64",
+        "QT_MCP_MINGW_BIN": "E:\\Download_tools\\QT\\Tools\\mingw730_64\\bin",
+        "QT_MCP_SANDBOX":   "<absolute path>\\qt-mcp\\examples\\minimal"
+      }
+    }
+  }
+}

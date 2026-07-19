@@ -1,0 +1,32 @@
+# Auto-detect text files, normalize line endings on commit.
+*           text=auto eol=lf
+
+# Python: enforce LF, ensure diffs show as Python.
+*.py        text eol=lf diff=python
+
+# Markdown: LF (avoids CRLF churn in PRs on Windows).
+*.md        text eol=lf
+
+# Windows batch / cmd: preserve CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Qt / C++ project files: LF.
+*.pro       text eol=lf
+*.pri       text eol=lf
+*.qrc       text eol=lf
+*.ui        text eol=lf
+*.qml       text eol=lf
+
+# C++ source: LF.
+*.h         text eol=lf
+*.cpp       text eol=lf
+*.hpp       text eol=lf
+*.cc        text eol=lf
+*.cxx       text eol=lf
+
+# Don't diff generated files even if they ever sneak into the repo.
+moc_*.cpp   binary
+ui_*.h      binary
+qrc_*.cpp   binary

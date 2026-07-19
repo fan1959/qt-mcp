@@ -1,0 +1,1 @@
+"""full tests = need Qt 5.14.2 + MinGW installed on PATH or via QT_MCP_* env vars."""

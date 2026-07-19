@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Smoke import
+        run: |
+          python -c "import server; assert server.__version__ == '0.2.0', server.__version__"
+          python -c "import server; assert len([n for n in dir(server) if n.startswith('qt_')]) >= 29"
+
+      - name: Run light pytest (no Qt SDK needed)
+        env:
+          QT_MCP_JSON: "1"
+        run: |
+          python -m pytest -m light -v 2>&1 | tail -30
+        # Light tests = pure-python (parsers, helpers, sandbox rejection).
+        # Runs in <5s, perfect for CI gating on every PR.
+
+  ci-qt-sdk:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    # Disabled by default: needs the full 5 GB Qt SDK installed on the runner.
+    # To enable locally, prepend `if: ${{ false }}` to remove, or trigger via
+    # workflow_dispatch and select 'full-tests'.
+    if: ${{ false }}
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.14.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          modules: 'qttools qtsvg'
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Run full e2e suite
+        env:
+          QT_MCP_QT_ROOT: ${{ env.Qt5_DIR }}
+          QT_MCP_MINGW_BIN: ${{ env.Qt5_DIR }}\..\..\Tools\mingw730_64\bin
+          QT_MCP_SANDBOX: ${{ github.workspace }}\.tmp
+        run: |
+          for t in tests/full/e2e_test tests/full/audit_test tests/full/e2e_new_tools tests/full/e2e_new_tools_v2 tests/full/e2e_new_tools_v3 tests/full/e2e_new_tools_v4 tests/full/e2e_new_tools_v5 tests/full/e2e_fixes tests/full/e2e_structured_diagnostics; do
+            echo "=== $t ==="
+            python "$t.py" || echo "FAILED: $t"
+          done

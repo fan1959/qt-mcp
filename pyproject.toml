@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qt-mcp"
+version = "0.4.3"
+description = "MCP server that wraps the Qt 5.14.2 + MinGW toolchain for AI-driven C++ project workflows"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [
+    { name = "qt-mcp contributors" },
+]
+keywords = ["mcp", "qt", "qt5", "mingw", "clang-format", "qmllint", "qmake"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "mcp[cli]>=1.28,<2.0",
+    "pydantic>=2.0,<3.0",
+    "pywinauto>=0.6.8,<0.7",
+    "Pillow>=9.0,<12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9.0",
+]
+
+[project.scripts]
+qt-mcp = "server:main"
+
+[project.urls]
+Homepage = "https://github.com/fan1959/qt-mcp"
+Issues = "https://github.com/fan1959/qt-mcp/issues"
+
+[tool.setuptools]
+py-modules = ["server", "templates_game_framework"]
+
+[tool.setuptools.package-data]
+"qt-mcp" = ["LICENSE", "README.md", "requirements.txt", ".gitignore", ".gitattributes", "pytest.ini"]

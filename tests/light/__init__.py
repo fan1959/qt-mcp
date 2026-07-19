@@ -1,0 +1,1 @@
+"""light tests = pure-python, no Qt SDK required."""
