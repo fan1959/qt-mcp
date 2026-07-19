@@ -1,22 +1,20 @@
-# Minimal qt-mcp example
+# 最小的 qt-mcp 示例
 
-The smallest possible Qt + qt-mcp setup. One `console_app` project, one
-`.mcp.json` that wires the server into Claude.
+最小的 Qt + qt-mcp 配置：一个 `console_app` 项目，一个把服务器接入 Claude 的 `.mcp.json`。
 
-## Files
+## 文件
 
-- `hello.pro` — qmake project file
-- `main.cpp` — one-shot CLI: parse `--name`, print greeting, exit
-- `.mcp.json` — registers the qt-mcp server with Claude Code
+- `hello.pro` — qmake 项目文件
+- `main.cpp` — 一次性 CLI：解析 `--name`，打印问候，退出
+- `.mcp.json` — 把 qt-mcp 服务器注册进 Claude Code
 
-## Try it
+## 试一下
 
-1. From this directory, build it with the MCP tools:
+1. 在这个目录下，用 MCP 工具构建：
 
-   > "Use qt_scaffold to put a console_app at `./hello` (it'll reuse these
-   > files) and qt_build it."
+   > "用 qt_scaffold 在 `./hello` 放一个 console_app（会复用这些文件），然后 qt_build 一下。"
 
-2. Or by hand:
+2. 或者手动：
 
    ```bash
    qmake hello.pro
@@ -25,30 +23,29 @@ The smallest possible Qt + qt-mcp setup. One `console_app` project, one
    # → Hello, World!
    ```
 
-## Wiring into Claude Code
+## 接入 Claude Code
 
-Drop the included `.mcp.json` into this folder (or merge its `mcpServers`
-block into your user-level config):
+把自带的 `.mcp.json` 放进这个目录（或把它的 `mcpServers` 块合并到你的用户级配置）：
 
 ```json
 {
   "mcpServers": {
     "qt": {
       "command": "python",
-      "args": ["<absolute path>\\qt-mcp\\server.py"],
+      "args": ["<绝对路径>\\qt-mcp\\server.py"],
       "transport": "stdio",
       "env": {
         "QT_MCP_QT_ROOT":   "E:\\Download_tools\\QT\\5.14.2\\mingw73_64",
         "QT_MCP_MINGW_BIN": "E:\\Download_tools\\QT\\Tools\\mingw730_64\\bin",
-        "QT_MCP_SANDBOX":   "<absolute path>\\qt-mcp\\examples\\minimal"
+        "QT_MCP_SANDBOX":   "<绝对路径>\\qt-mcp\\examples\\minimal"
       }
     }
   }
 }
 ```
 
-Then ask Claude:
+然后让 Claude：
 
-> "Scaffold a console_app here, build it, run with `--name Qt`."
+> "在这儿搭一个 console_app，构建，跑一下 `--name Qt`。"
 
-Claude will drive `qt_scaffold` → `qt_build` → `qt_run` and print the result.
+Claude 会驱动 `qt_scaffold` → `qt_build` → `qt_run` 并打印结果。
