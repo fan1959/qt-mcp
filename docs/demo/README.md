@@ -1,31 +1,26 @@
-# qt-mcp demo walkthrough
+# qt-mcp 演示走查
 
-A 6-step end-to-end demo of the qt-mcp server, from empty directory to a
-running Qt MainWindow driven by AI. All steps are runnable from a Claude
-Code session once the server is registered.
+6 步端到端 demo：从空目录到一个由 AI 驱动的运行中 Qt MainWindow。所有步骤在 Claude Code 会话里可执行（前提是服务器已注册）。
 
-**What this proves:** the MCP server can scaffold, build, run, drive, and
-inspect a Qt project without any human clicking inside the IDE.
+**这个 demo 证明了什么**：MCP 服务器可以搭建、构建、运行、驱动、检查 Qt 项目，全程无需任何人在 IDE 里手动点击。
 
 ---
 
-## Step 1 — `qt_diagnose_env`
+## 第 1 步 — `qt_diagnose_env`
 
-Before any project work, confirm the toolchain is healthy.
+做任何项目工作前，确认工具链健康。
 
-> "Run `qt_diagnose_env` with deep=True."
+> "跑 `qt_diagnose_env` 设 deep=True。"
 
-Returns a checklist of every required binary, the 32-bit / 64-bit coexistence
-report, the PATH order audit, and the sandbox writability test. Catches
-"Required Qt tool not found" failures **before** they bite later.
+返回每个必需二进制的 checklist、32 位 / 64 位共存报告、PATH 顺序审计、沙箱可写性测试。把 "Required Qt tool not found" 这种问题**提前**抓出来。
 
 ---
 
-## Step 2 — `qt_scaffold`
+## 第 2 步 — `qt_scaffold`
 
-> "Scaffold a `mainwindow` project at `Files/demo/counter`."
+> "在 `Files/demo/counter` 搭一个 `mainwindow` 项目。"
 
-Emits a runnable skeleton:
+生成可运行骨架：
 
 ```
 demo/counter/
@@ -36,108 +31,81 @@ demo/counter/
 └── mainwindow.ui
 ```
 
-The 9-template enum (`widget` / `mainwindow` / `dialog` / `qml_app` /
-`console_app` / `cards_game` / `chess_game` / `generic_game` / `game_framework`)
-covers everything from a CLI tool to a full board-game scaffold.
+9 个模板的 enum（`widget` / `mainwindow` / `dialog` / `qml_app` / `console_app` / `cards_game` / `chess_game` / `generic_game` / `game_framework`）覆盖从 CLI 工具到完整棋牌游戏骨架。
 
 ---
 
-## Step 3 — `qt_pro_edit` + `qt_class_wizard`
+## 第 3 步 — `qt_pro_edit` + `qt_class_wizard`
 
-Add a Counter QObject to the scaffolded project.
+往刚搭好的项目里加一个 Counter QObject。
 
-> "Use `qt_class_wizard` to generate a Counter class with `Q_PROPERTY value`
-> and a QTimer that ticks every 100 ms."
+> "用 `qt_class_wizard` 生成一个 Counter 类，带 `Q_PROPERTY value` 和每 100 ms tick 的 QTimer。"
 
-Writes `counter.h` / `counter.cpp` / `counter.ui`, runs `moc`, runs `uic`,
-compiles a transient binary to confirm everything links, and updates the
-`.pro` to include the new files.
+写 `counter.h` / `counter.cpp` / `counter.ui`，跑 `moc`，跑 `uic`，编译一个临时二进制确认链接通过，更新 `.pro` 包含新文件。
 
 ---
 
-## Step 4 — `qt_build`
+## 第 4 步 — `qt_build`
 
-> "Run `qt_build` on `Files/demo/counter`."
+> "对 `Files/demo/counter` 跑 `qt_build`。"
 
-`qmake` parses the `.pro`, `mingw32-make` runs in parallel (default `-j4`).
-On success, the build log is appended to `<project_dir>/.qt_mcp_last_build.log`.
-On failure, the log is parsed into a structured `--- diagnostics (JSON) ---`
-block: file, line, column, tool, code, message, **suggestion**.
+`qmake` 解析 `.pro`，`mingw32-make` 并行跑（默认 `-j4`）。成功时，构建日志追加到 `<project_dir>/.qt_mcp_last_build.log`。失败时，日志被解析为结构化的 `--- diagnostics (JSON) ---` 块：file、line、column、tool、code、message、**suggestion**。
 
-A typical gcc error suggestion: *"Looks like a header is missing. Try
-`qt_grep` to confirm the symbol exists, or check your `.pro` INCLUDEPATH."*
+典型的 gcc 错误建议：*"Looks like a header is missing. Try `qt_grep` to confirm the symbol exists, or check your `.pro` INCLUDEPATH."*
 
 ---
 
-## Step 5 — `qt_run` (detached) + `qt_ui_action` (driving)
+## 第 5 步 — `qt_run`（后台） + `qt_ui_action`（驱动）
 
-> "Launch the .exe detached, then drive the counter UI."
+> "把 .exe 后台启动，然后驱动 counter 界面。"
 
-1. `qt_run(executable=..., detach=True, timeout=0)` forks the `.exe`, returns
-   the PID, and the MCP conversation moves on.
-2. `qt_ui_action(action="click", click_button="Start")` finds the button by
-   its `objectName` and clicks it. The counter's `QTimer` starts ticking.
-3. `qt_ui_action(action="screenshot", output_path=...)` saves a PNG of the
-   window. `pywinauto`'s `win.capture_as_image()` (PrintWindow) bypasses the
-   desktop compositor so even occluded windows come through clean.
+1. `qt_run(executable=..., detach=True, timeout=0)` fork 出 `.exe`，返回 PID，MCP 会话继续往下走
+2. `qt_ui_action(action="click", click_button="Start")` 按 `objectName` 找到按钮并点击。counter 的 `QTimer` 开始 tick
+3. `qt_ui_action(action="screenshot", output_path=...)` 把窗口截图存为 PNG。`pywinauto` 的 `win.capture_as_image()`（PrintWindow）绕过桌面合成器，即使被遮挡的窗口也能拍清楚
 
 ```
 Count: 33
 [Stop] [Reset]
 ```
 
-This PNG is what `qt_ui_action` produced — see `docs/demo/screenshots/`.
+这 PNG 就是 `qt_ui_action` 产出的——见 `docs/demo/screenshots/`。
 
 ---
 
-## Step 6 — `qt_validate` + `qt_smoke_test`
+## 第 6 步 — `qt_validate` + `qt_smoke_test`
 
-End the demo with two sanity checks.
+最后跑两个 sanity check。
 
-> "Validate the project file with `qt_validate`."
+> "用 `qt_validate` 检查项目文件。"
 
-Walks the `.pro` and reports each `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES`
-reference as `[OK]` / `[MISS]` / `[OOS]` (out of sandbox) / `[BAD]` (XML
-parse error). Catches typos and stale entries before the next build.
+遍历 `.pro`，把每个 `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES` 引用标为 `[OK]` / `[MISS]` / `[OOS]`（沙箱外）/ `[BAD]`（XML 解析错误）。下次 build 前抓拼写错和过期条目。
 
-> "Run `qt_smoke_test` to confirm the project still builds and launches."
+> "跑 `qt_smoke_test` 确认项目还能构建和启动。"
 
-`clean → build → run for 5s → kill → verdict: PASS / FAIL`. The smoke test
-output includes the tail of each step so you can spot the regression
-without scrolling.
+`clean → build → 跑 5s → kill → 结论：PASS / FAIL`。smoke test 输出每步末尾，不用翻屏就能定位回归。
 
 ---
 
-## What the 6 screenshots show
+## 这 6 张截图说明什么
 
-The 6 PNGs in this directory (`mcp_via_pid_*.png`, `counter_t*.png`,
-`desktop.png`) come from a real run of the above walkthrough. They are the
-visual proof that the MCP server actually drove the Qt window end-to-end —
-no manual UI interaction, no Qt Creator launched, no pre-built binary.
+这个目录里的 6 张 PNG（`mcp_via_pid_*.png`、`counter_t*.png`、`desktop.png`）来自上述走查的真实运行。它们是 MCP 服务器确实端到端驱动 Qt 窗口的视觉证据——没有手动 UI 操作，没有启动 Qt Creator，没有预编译二进制。
 
 ---
 
-## What this demo does NOT cover
+## 这个 demo 没覆盖什么
 
-- **The Qt Creator GUI path** (`qt_creator_open` / `qt_creator_run`) — those
-  tools open a `.pro` in the IDE itself and build with Ctrl+B. Useful when
-  you want to see Qt Creator on screen (debugging IDE behavior, teaching,
-  visual verification). See [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md).
-- **Translation flow** (`qt_translate`) — separate walkthrough: write
-  `tr("...")` calls, run `lupdate`, hand-translate the `.ts`, run `lrelease`,
-  load the `.qm` via `QTranslator`.
-- **CI integration** — see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-  for the GitHub Actions setup.
+- **Qt Creator GUI 路径**（`qt_creator_open` / `qt_creator_run`）——这些工具在 IDE 里打开 `.pro` 然后用 Ctrl+B 构建。想看 Qt Creator 在屏上时（调试 IDE 行为、教学、可视化验证）有用。见 [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md)
+- **翻译流**（`qt_translate`）——独立走查：写 `tr("...")` 调用、跑 `lupdate`、手工翻译 `.ts`、跑 `lrelease`、通过 `QTranslator` 加载 `.qm`
+- **CI 集成**——见 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) 里的 GitHub Actions 配置
 
 ---
 
-## Re-running the demo
+## 重跑 demo
 
 ```bash
 cd E:/Download_tools/QT/Tools/qt-mcp
-python e2e_test.py     # scaffold → build → run a similar project, screenshot, kill
+python e2e_test.py     # 搭 → 构建 → 跑一个类似项目，截图，kill
 python e2e_new_tools_v5.py   # qt_validate / qt_run_trace / qt_smoke_test
 ```
 
-The `e2e_creator_tools.py` suite re-creates the Qt Creator GUI path; it
-needs a live Qt Creator instance and is opt-in.
+`e2e_creator_tools.py` 套件重现 Qt Creator GUI 路径，需要运行中的 Qt Creator 实例，按需启用。
