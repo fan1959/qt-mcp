@@ -1,472 +1,464 @@
-# Changelog
+# 更新日志
 
-All notable changes to **qt-mcp** are documented in this file.
+**qt-mcp** 的所有重要变更记录在本文件中。
 
-The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
+项目遵循 [语义化版本](https://semver.org/spec/v2.0.0.html)。
 
 ## [0.4.3] — 2026-07-19
 
-### Added (4 new tools — 147 total)
+### 新增（4 个新工具 — 共 147 个）
 
-v0.4.3 focuses on **runtime + DB-perf + signal-monitor + Qt 6 literal migration** — closing the gap between static analysis and runtime introspection, plus the final Qt 6 string-literal migration rules.
+V0.4.3 聚焦 **runtime + DB 性能 + 信号监控 + Qt 6 字面量迁移** —— 收尾静态分析与运行时 introspection 之间的空白，加 Qt 6 字符串字面量迁移的最终规则。
 
-- **`qt_db_perf_index`** — SQLite index advisor. Runs `EXPLAIN QUERY PLAN SELECT rowid FROM {table} WHERE {col} = 0` per column; flags columns whose plan shows `SCAN` (full table scan); generates ready-to-paste `CREATE INDEX idx_{table}_{col} ON {table}({col});` SQL. Auto-detects `INTEGER PRIMARY KEY` columns (already implicitly indexed via rowid alias) and skips them. text + json output.
-- **`qt_qobject_invoke_connect_monitor`** — Static connect-call topology heatmap. Walks the project for both PMF-style (`connect(sender, &Class::signal, receiver, &Class::slot)`) and old `SIGNAL/SLOT` style connects. Reports top-N senders / receivers / signals (`Class::signal`) / slots (`Class::slot`) / files by connect count. Companion to `qt_signal_slot_trace` (v0.2.7) which maps every wire; this one surfaces the hot-entity heatmap.
-- **`qt_modernize_qt6_string_literal`** — Adds the C++14 `u""` prefix to `tr("literal")` calls and to raw string literals containing non-ASCII characters (CJK / emoji / accented Latin). Three rules: `tr_u_prefix`, `literal_u_prefix_nonascii`, `literal_u_prefix_concat` (drops `QString::fromUtf8("中文")` wrapper when literal already has non-ASCII). Skips already-wrapped literals (`u""`, `L""`, `QStringLiteral`, `QByteArrayLiteral`, `QLatin1String`). Complements `qt_modernize_qt5_to_qt6` (v0.3.6) which already wraps `QString("...")` → `QStringLiteral("...")`.
-- **`qt_qobject_invocation_history`** — Runtime counterpart to `qt_qobject_invocation_count` (v0.4.2, static). Parses JSON-lines log files (one record per line: `{ts, method, args, caller, duration_ms}`) written by a running helper .exe (built via `qt_invoke_helper_gen`). Reports per-method call count + total/avg duration + top callers by count + recent timeline. Robust to non-JSON / blank lines. Auto-detects timestamp units (seconds vs milliseconds) by magnitude.
+- **`qt_db_perf_index`** — SQLite 索引建议器。每列跑 `EXPLAIN QUERY PLAN SELECT rowid FROM {table} WHERE {col} = 0`；标记 plan 中出现 `SCAN`（全表扫描）的列；生成可直接粘贴的 `CREATE INDEX idx_{table}_{col} ON {table}({col});` SQL。自动识别 `INTEGER PRIMARY KEY` 列（已通过 rowid 别名隐式索引）并跳过。text + json 输出。
+- **`qt_qobject_invoke_connect_monitor`** — 静态 connect 调用拓扑热图。遍历项目里的 PMF 风格（`connect(sender, &Class::signal, receiver, &Class::slot)`）和老式 `SIGNAL/SLOT` 风格 connect。按 connect 计数报告 top-N sender / receiver / signal（`Class::signal`） / slot（`Class::slot`）/ 文件。配 `qt_signal_slot_trace`（v0.2.7，它映射每条连接线）；本工具暴露热点实体热图。
+- **`qt_modernize_qt6_string_literal`** — 给 `tr("字面量")` 调用和含非 ASCII 字符（CJK / emoji / 带重音的拉丁字母）的裸字符串字面量加 C++14 `u""` 前缀。三条规则：`tr_u_prefix`、`literal_u_prefix_nonascii`、`literal_u_prefix_concat`（当字面量已含非 ASCII 时去掉 `QString::fromUtf8("中文")` 包装）。跳过已加前缀的字面量（`u""`、`L""`、`QStringLiteral`、`QByteArrayLiteral`、`QLatin1String`）。补 `qt_modernize_qt5_to_qt6`（v0.3.6，已把 `QString("...")` 包装成 `QStringLiteral("...")`）。
+- **`qt_qobject_invocation_history`** — `qt_qobject_invocation_count`（v0.4.2，静态）的运行时对端。解析 JSON-lines log 文件（每行一条记录：`{ts, method, args, caller, duration_ms}`），由运行中的 helper .exe（通过 `qt_invoke_helper_gen` 生成）写入。报告每方法调用次数 + 总/平均耗时 + top caller + 最近 timeline。对非 JSON / 空行宽容。按数值大小自动识别时间戳单位（秒 vs 毫秒）。
 
-### Numbers
+### 数字
 
-- 147 tools (v0.4.2 143 → +4 new)
-- 555 pytest tests, all passing (v0.4.2 555 + 22 e2e_v31 − 4 pre-existing v13/v18 json-footer compat fixes)
-- server.py ~29,800 lines / ~30 KB
+- 147 个工具（v0.4.2 143 → +4 新增）
+- 555 个 pytest 测试，全 PASS（v0.4.2 555 + e2e_v31 新增 22 − 4 个 v13/v18 json-footer 兼容旧修复）
+- server.py 约 29,800 行 / 约 30 KB
 
 ## [0.4.2] — 2026-07-17
 
-### Added (4 new tools + 1 upgraded — 143 total)
+### 新增（4 个新工具 + 1 个升级 — 共 143 个）
 
-- **`qt_qtquick_3d_setup`** — Project skeleton for a Qt 3D app (Qt3DCore + Qt3DRender + Qt3DExtras + Qt3DInput + Qt3DLogic). 4 templates: cube_demo, sphere_demo, scene_demo, model_loader. Build system selectable qmake / CMake.
-- **`qt_qobject_invoke_metadata`** (拆 3 of 3 #1) — Static QObject introspection from .h/.cpp/moc_*.cpp (signals / slots / Q_INVOKABLE / Q_PROPERTY READ/WRITE/NOTIFY).
-- **`qt_qobject_invoke_property_diff`** (拆 3 of 3 #2) — Compare two header sets for Q_PROPERTY + signals + slots + Q_INVOKABLE drift; per-item added/removed/changed + per-field change.
-- **`qt_qobject_invocation_count`** (拆 3 of 3 #3) — Static count of .invokeMethod( + QMetaObject::invokeMethod( call sites per target method name.
+- **`qt_qtquick_3d_setup`** — Qt 3D 应用的项目骨架（Qt3DCore + Qt3DRender + Qt3DExtras + Qt3DInput + Qt3DLogic）。4 个模板：cube_demo、sphere_demo、scene_demo、model_loader。构建系统可选 qmake / CMake。
+- **`qt_qobject_invoke_metadata`**（拆分 3 of 3 #1）— 从 .h / .cpp / moc_*.cpp 静态 introspection QObject（signals / slots / Q_INVOKABLE / Q_PROPERTY READ/WRITE/NOTIFY）。
+- **`qt_qobject_invoke_property_diff`**（拆分 3 of 3 #2）— 比较两套头文件的 Q_PROPERTY + signals + slots + Q_INVOKABLE 漂移；逐项新增/删除/变更 + 逐字段变更。
+- **`qt_qobject_invocation_count`**（拆分 3 of 3 #3）— 按目标方法名静态统计 `.invokeMethod(` + `QMetaObject::invokeMethod(` 调用点。
 
-### Changed
-- **`qt_signature_batch`** accepts `error_strategy` enum (continue_all | fail_fast | continue_n:N) + new `csv_report` parameter for per-file CSV summary. `continue_on_error` bool kept for backward compat.
+### 变更
 
-### Numbers
-- 143 tools (v0.4.1 139 → +4 new; existing unchanged)
-- 555 pytest tests (v0.4.1 536 → +19 e2e_v30)
+- **`qt_signature_batch`** 接受 `error_strategy` enum（continue_all | fail_fast | continue_n:N）+ 新增 `csv_report` 参数输出逐文件 CSV 摘要。`continue_on_error` bool 保留以向后兼容。
+
+### 数字
+
+- 143 个工具（v0.4.1 139 → +4 新增；已有工具不变）
+- 555 个 pytest 测试（v0.4.1 536 → +19 e2e_v30）
 
 ## [0.4.1] — 2026-07-17
 
-### Added (3 new tools — 142 total)
-v0.4.1 closes the "release / quality-of-life" gap left open by v0.3.6-v0.3.8:
-the final-mile deployment ritual + a sanitizer-report humanizer + a
-natural-language-to-template scaffolder.
+### 新增（3 个新工具 — 共 142 个）
 
-- **`qt_asan_runtime_report`** — Parse a sanitizer report (ASan/UBSan/TSan/LeakSanitizer)
-  and translate each finding into human-readable Chinese + actionable fix hint.
-  Translates 20+ common categories (heap-buffer-overflow, use-after-free,
-  data-race, etc.) to Qt-relevant remediation advice. Output formats:
-  `text` (default, with translated findings), `json` (machine-readable),
-  `summary` (just counts by category).
-- **`qt_template_scaffold`** — Project skeleton from a natural-language description.
-  Bridges the gap to `qt_scaffold` (v0.1.0) by inferring the template via
-  Chinese + English keyword matching (chess/tictactoe/breakout/cards/
-  music/tasklist/game/cli/qml/dialog/widget/mainwindow). Auto-picks highest
-  score on tie; offers `interactive=True` to show the candidate ranking.
-- **`qt_deploy_bundle`** — One-call bundle for distribution: `windeployqt`
-  (DLLs + plugins) + optional `signtool` codesign on every .exe/.dll +
-  optional NSIS `installer.nsi` + `build_installer.bat` generation.
-  Each step is independently reported in JSON; skip flags default to safe.
+V0.4.1 收尾 v0.3.6–v0.3.8 留下的"发布 / 易用性"缺口：
+发布最后一公里部署仪式 + sanitizer 报告人话化 + 自然语言到模板的脚手架器。
 
-### Numbers
-- **142 tools** (v0.4.1 139 → 142 was the previous count + 3 new). Total delta vs v0.3.8 baseline (130): +12 (+9.2%).
-- **536 pytest tests** (v0.3.8 470 → v0.4.1 536, +66) — including 20 new e2e_v29 tests covering 3 new tools (q_asan_runtime_report 8 tests, qt_template_scaffold 8 tests, qt_deploy_bundle 4 tests).
-- **server.py 28KB → ~31KB** (~3000 lines added).
+- **`qt_asan_runtime_report`** — 解析 sanitizer 报告（ASan / UBSan / TSan / LeakSanitizer），把每条 finding 翻成中文 + 可执行的修复提示。翻译 20+ 常见类别（heap-buffer-overflow、use-after-free、data-race 等）到 Qt 相关的修复建议。输出格式：`text`（默认，带翻译后的 findings）、`json`（机器可读）、`summary`（仅按类别计数）。
+- **`qt_template_scaffold`** — 从自然语言描述生成项目骨架。通过中英文关键词匹配（chess / tictactoe / breakout / cards / music / tasklist / game / cli / qml / dialog / widget / mainwindow）推断模板，补 `qt_scaffold`（v0.1.0）的缺口。打分相同时自动选最高分；提供 `interactive=True` 显示候选排序。
+- **`qt_deploy_bundle`** — 一键打包发布：`windeployqt`（DLL + 插件）+ 可选 `signtool` codesign 全部 .exe/.dll + 可选生成 NSIS `installer.nsi` + `build_installer.bat`。每步在 JSON 里独立报告；skip 标志默认安全。
 
-### Key design decisions
-1. **`qt_asan_runtime_report` lookup table is Chinese-first** — every category has a concise 2-line `cn` (translation) + `hint` (Qt-aware fix). The Wiki URL `https://github.com/google/sanitizers/wiki` is the always-fallback for unknown categories.
-2. **`qt_template_scaffold` calls `_write_scaffold` directly** (not via the public `qt_scaffold` tool) to avoid cross-tool dispatch and give a cleaner JSON footer.
-3. **`qt_deploy_bundle` is env-aware** — `windeployqt` runs with QT_BIN_DIR injected into PATH; signtool runs only when both `sign=True` AND `certificate_path` is provided (skip + warn otherwise); NSIS skips when `installer=False`. The 3-step status report names each step's result (`ok / fail / skipped / error`).
-4. **Test isolation pattern (`autouse=True` fixture + `_split_json` helper)** — `e2e_v29` module sets `QT_MCP_JSON=1` per test via monkeypatch so JSON footers are reliable, and provides a tolerant JSON parser so test failure messages don't crash on missing footers. Other e2e suites are unaffected.
+### 数字
+
+- **142 个工具**（v0.4.1 139 → 142 是上一版数量 + 3 新增）。相对 v0.3.8 baseline（130）总增量：+12（+9.2%）。
+- **536 个 pytest 测试**（v0.3.8 470 → v0.4.1 536，+66）—— 含 20 个新 e2e_v29 测试覆盖 3 个新工具（qt_asan_runtime_report 8 个、qt_template_scaffold 8 个、qt_deploy_bundle 4 个）。
+- **server.py 28KB → 约 31KB**（约 3000 行新增）。
+
+### 关键设计决策
+
+1. **`qt_asan_runtime_report` 的查找表中文优先** —— 每个类别都有简洁的 2 行 `cn`（翻译）+ `hint`（Qt 相关修复）。Wiki URL `https://github.com/google/sanitizers/wiki` 作为未知类别的始终兜底。
+2. **`qt_template_scaffold` 直接调 `_write_scaffold`**（不通过公开的 `qt_scaffold` 工具），避免跨工具派发，得到更干净的 JSON 段。
+3. **`qt_deploy_bundle` 感知环境** —— `windeployqt` 跑时把 `QT_BIN_DIR` 注进 PATH；signtool 只在 `sign=True` **且**提供了 `certificate_path` 时才跑（否则跳过并警告）；NSIS 在 `installer=False` 时跳过。3 步状态报告命名每步结果（`ok / fail / skipped / error`）。
+4. **测试隔离模式（`autouse=True` fixture + `_split_json` helper）** —— `e2e_v29` 模块通过 monkeypatch 在每测试设 `QT_MCP_JSON=1` 让 JSON 段稳定，并提供宽容的 JSON 解析器让测试失败消息在缺失段时不崩溃。其他 e2e 套件不受影响。
 
 ## [0.3.8] — 2026-07-10
 
-### Added (7 new tools — 130 total)
+### 新增（7 个新工具 — 共 130 个）
 
-Based on user-supplied course materials (SCU Wiki Qt 课件 + JB51 Qt 快速入门 62 篇教程 PDF). v0.3.8 fills the **教学性** gap: previous sprints were industrial/enterprise; v0.3.8 adds 7 tutorial/teaching-oriented tools + enhances 3 existing tools to better cover the course content.
+基于用户提供的课程材料（SCU Wiki Qt 课件 + JB51 Qt 快速入门 62 篇教程 PDF）。V0.3.8 填补 **教学性** 缺口：之前 sprint 都是工业/企业向；v0.3.8 加 7 个教学向工具 + 增强 3 个已有工具以更好地覆盖课程内容。
 
-**New tools (7):**
+**新工具（7 个）：**
 
-- `qt_cpp_tutorial_scaffold` — generates runnable C++ tutorial snippets for 12 topics covering SCU C++ 强化 9 章: hello_world / namespace / class_object / friend / operator_overload / inheritance / polymorphism / template / type_cast / exception / iostream / stl. Each is a self-contained .cpp that compiles with any C++17 compiler (no Qt needed). Companion to the existing `qt_anim` / `qt_class_wizard` / `qt_input` snippets.
-- `qt_mysql_setup` — generates a Qt + MySQL/MariaDB starter project (.pro or CMakeLists.txt + dbmanager.h/.cpp + main.cpp + MySQL_SETUP.md). The setup md documents two paths: (1) compile QMYSQL from Qt source (JB51 Ch 22) or (2) use MariaDB Connector/C as a drop-in (recommended). Closes the gap that Qt 5.14.2's prebuilt MinGW does NOT ship the QMYSQL driver DLL.
-- `qt_http_client_gen` — generates a QNetworkAccessManager-based HTTP client (QNetworkRequest + GET/POST + JSON body + User-Agent header). Two modes: `async` (signals getFinished / postFinished / requestError — recommended for UI) and `sync` (blocking via QEventLoop — for CLI). JB51 Ch 32.
-- `qt_ftp_client_gen` — generates a QNetworkAccessManager-based FTP client (upload via put() with uploadProgress / download via get() with chunked write / list via get() returning directory listing). Modern Qt 5 replacement for the removed QFtp. JB51 Ch 33-34.
-- `qt_graphics_view_scaffold` — generates a QGraphicsView teaching project (Scene + View + 3 items: red rect, blue ellipse, green line + drag-and-drop with mousePressEvent / mouseMoveEvent / mouseReleaseEvent). Foundation for board games, CAD tools, flowcharts. JB51 Ch 19-20.
-- `qt_multimedia_setup` — generates a QtMultimedia starter (QMediaPlayer + QMediaPlaylist + QVideoWidget + QSoundEffect + sounds.qrc bundling + placeholder click.wav + MULTIMEDIA_SETUP.md with DirectShow/WMF backend notes). JB51 Ch 49.
-- `qt_qstyle_sheet_gen` — generates ready-to-use QSS (Qt Style Sheet) for any subset of 14 widget selectors (QPushButton / QLineEdit / QComboBox / QListView / QTableView / QHeaderView / QStatusBar / QMenuBar / QMenu / QToolBar / QTabWidget / QGroupBox / QProgressBar / QScrollBar). Two themes: `light` (blue accents on white) and `dark` (blue accents on dark gray). JB51 Ch 45.
+- `qt_cpp_tutorial_scaffold` — 为 SCU C++ 强化 9 章 12 个主题生成可运行的 C++ 教学片段：hello_world / namespace / class_object / friend / operator_overload / inheritance / polymorphism / template / type_cast / exception / iostream / stl。每个都是自洽的 .cpp，可用任意 C++17 编译器编译（不依赖 Qt）。配已有的 `qt_anim` / `qt_class_wizard` / `qt_input` 片段。
+- `qt_mysql_setup` — 生成 Qt + MySQL/MariaDB starter 项目（.pro 或 CMakeLists.txt + dbmanager.h/.cpp + main.cpp + MySQL_SETUP.md）。setup md 文档两条路径：(1) 从 Qt 源码编译 QMYSQL（JB51 Ch 22）或 (2) 用 MariaDB Connector/C 做 drop-in（推荐）。补上 Qt 5.14.2 的预编译 MinGW **不带** QMYSQL 驱动 DLL 的缺口。
+- `qt_http_client_gen` — 生成基于 QNetworkAccessManager 的 HTTP 客户端（QNetworkRequest + GET/POST + JSON body + User-Agent 头）。两种模式：`async`（信号 getFinished / postFinished / requestError —— UI 推荐）、`sync`（通过 QEventLoop 阻塞 —— CLI 用）。JB51 Ch 32。
+- `qt_ftp_client_gen` — 生成基于 QNetworkAccessManager 的 FTP 客户端（通过 put() 上传带 uploadProgress / 通过 get() 下载带分块写 / 通过 get() 列出目录返回目录列表）。Qt 5 现代替代已移除的 QFtp。JB51 Ch 33-34。
+- `qt_graphics_view_scaffold` — 生成 QGraphicsView 教学项目（Scene + View + 3 个 item：红色矩形、蓝色椭圆、绿色线 + 用 mousePressEvent / mouseMoveEvent / mouseReleaseEvent 实现拖拽）。棋牌游戏、CAD 工具、流程图的基础。JB51 Ch 19-20。
+- `qt_multimedia_setup` — 生成 QtMultimedia starter（QMediaPlayer + QMediaPlaylist + QVideoWidget + QSoundEffect + sounds.qrc 打包 + placeholder click.wav + MULTIMEDIA_SETUP.md 含 DirectShow/WMF 后端笔记）。JB51 Ch 49。
+- `qt_qstyle_sheet_gen` — 为 14 个 widget 选择器（QPushButton / QLineEdit / QComboBox / QListView / QTableView / QHeaderView / QStatusBar / QMenuBar / QMenu / QToolBar / QTabWidget / QGroupBox / QProgressBar / QScrollBar）的任意子集生成可用的 QSS（Qt Style Sheet）。两个主题：`light`（白底蓝色点缀）和 `dark`（深灰底蓝色点缀）。JB51 Ch 45。
 
-### Enhanced (3 existing tools)
+### 增强（3 个已有工具）
 
-- `qt_scaffold` — added 4 new SCU 项目库 templates: `tictactoe_game` (井字棋 3x3 grid + X/O switch + win detection) / `breakout_game` (打砖块 QTimer + paddle + bricks + collision) / `tasklist` (任务清单 QListView + QStringListModel + add/remove/clear) / `music_player` (QMediaPlayer + Open/Play/Pause/Stop + position slider). Brings total scaffold templates from 9 to 13.
-- `qt_db_seed` — added `mysql_check: bool = False` parameter. When True, appends a MySQL/QMYSQL driver compatibility report (driver DLL presence + libmysql.dll/libmariadb.dll on PATH + mysql/mariadb CLI + setup guidance). Critical because Qt 5.14.2 + MinGW prebuilt does NOT ship the QMYSQL driver — the user MUST compile or use MariaDB drop-in.
-- `qt_anim` — added 3 new `animation_type` values that emit ready-to-paste paintEvent overrides (not QPropertyAnimation): `double_buffer` (JB51 Ch 18: QPixmap off-screen buffer for flicker-free drawing) / `painter_path` (JB51 Ch 14: QPainterPath with moveTo/lineTo/quadTo/cubicTo/addEllipse) / `doodle_board` (JB51 Ch 17: freehand drawing with mousePressEvent + mouseMoveEvent accumulating a QPainterPath). Brings total animation types from 6 to 9.
+- `qt_scaffold` — 加 4 个新的 SCU 项目库模板：`tictactoe_game`（井字棋 3x3 棋盘 + X/O 切换 + 胜负判断）/ `breakout_game`（打砖块 QTimer + paddle + bricks + 碰撞）/ `tasklist`（任务清单 QListView + QStringListModel + add/remove/clear）/ `music_player`（QMediaPlayer + Open/Play/Pause/Stop + 进度条）。脚手架模板总数从 9 → 13。
+- `qt_db_seed` — 加 `mysql_check: bool = False` 参数。为 True 时追加 MySQL/QMYSQL 驱动兼容性报告（驱动 DLL 存在 + libmysql.dll / libmariadb.dll 在 PATH + mysql / mariadb CLI + 配置指南）。关键是因为 Qt 5.14.2 + MinGW 预编译**不**带 QMYSQL 驱动 —— 用户**必须**自编译或用 MariaDB drop-in。
+- `qt_anim` — 加 3 个新 `animation_type` 值，发出 ready-to-paste 的 paintEvent override（不是 QPropertyAnimation）：`double_buffer`（JB51 Ch 18：QPixmap 离屏 buffer 做无闪烁绘制）/ `painter_path`（JB51 Ch 14：QPainterPath 用 moveTo / lineTo / quadTo / cubicTo / addEllipse）/ `doodle_board`（JB51 Ch 17：用 mousePressEvent + mouseMoveEvent 累积 QPainterPath 做自由绘画）。动画类型总数从 6 → 9。
 
-### Bug fixes (2)
+### Bug 修复（2）
 
-- `qt_anim` initial enhancement placed the new-type branches AFTER the validation check, so all 3 new types (double_buffer/painter_path/doodle_board) were rejected with "invalid animation_type" before reaching the snippet. Moved the new-type check BEFORE the validation, so the 3 types take an early-return path. Caught by e2e_v24 test 3.
-- `_qss_dark_overrides()` is intentionally a function (not a dict literal) so it can be called fresh each time. This avoids the "mutable default argument" pitfall and matches the same pattern as `_qss_for_selectors()`.
+- `qt_anim` 最初增强把新类型分支放在 validation 检查**之后**，导致 3 个新类型（double_buffer / painter_path / doodle_board）在到达 snippet 之前就被 "invalid animation_type" 拒绝。把新类型检查移到 validation **之前**，让 3 个类型走早返回路径。被 e2e_v24 test 3 抓出。
+- `_qss_dark_overrides()` 故意写成函数（不是 dict literal），这样每次调用都是新的。避免"可变默认参数"陷阱，与 `_qss_for_selectors()` 同模式。
 
-### Numbers
+### 数字
 
-- **130 tools** (v0.3.7 123 → v0.3.8 130, +7, +5.7%)
-- **server.py 25802 lines** (v0.3.7 23286 → v0.3.8 25802, +2516, +10.8%)
-- **29 e2e suites** (v0.3.7 28 → v0.3.8 29, +1 `e2e_new_tools_v24`)
-- **470 pytest tests** (v0.3.7 451 → v0.3.8 470, +19 e2e_v24, +4.2%; `python -m pytest -q` 470 passed in 175s)
-- e2e_v24: 19 pytest tests, 66 check 断言
-- 130/130 工具 e2e 覆盖 + docstring 完整 + JSON footer
+- **130 个工具**（v0.3.7 123 → v0.3.8 130，+7，+5.7%）
+- **server.py 25802 行**（v0.3.7 23286 → v0.3.8 25802，+2516，+10.8%）
+- **29 个 e2e 套件**（v0.3.7 28 → v0.3.8 29，+1 `e2e_new_tools_v24`）
+- **470 个 pytest 测试**（v0.3.7 451 → v0.3.8 470，+19 e2e_v24，+4.2%；`python -m pytest -q` 470 passed in 175s）
+- e2e_v24：19 个 pytest 测试，66 个 check 断言
+- 130/130 工具 e2e 覆盖 + docstring 完整 + JSON 段
 
 ## [0.3.7] — 2026-07-10
 
-### Added (12 new tools — 123 total)
+### 新增（12 个新工具 — 共 123 个）
 
-**Runtime write loop (3 tools)** — closes the read/write gap left by `qt_widget_introspect` + `qt_runtime_props` + `qt_console_messages` (all read-only). Now you can both observe and mutate a running Qt app at runtime.
+**Runtime 写入闭环（3 个工具）** —— 收尾 `qt_widget_introspect` + `qt_runtime_props` + `qt_console_messages`（只读）留下的读写缺口。现在可以同时观察和变更运行中的 Qt 应用。
 
-- `qt_invoke_helper_gen` — generates a Qt helper `.exe` skeleton (QApplication + user QObject subclass with `Q_PROPERTY` + `Q_INVOKABLE`) that exposes a stdin/stdout line-delimited JSON protocol. Companion to `qt_widget_introspect`; the *write* counterpart of the runtime introspection trio.
-- `qt_qproperty_set` — drives a running helper .exe and sends a `set_property` JSON command. Sets Q_PROPERTY values at runtime.
-- `qt_meta_invoke` — drives a running helper .exe and sends an `invoke` JSON command. Calls Q_INVOKABLE / `QMetaObject::invokeMethod` at runtime.
+- `qt_invoke_helper_gen` — 生成 Qt helper `.exe` 骨架（QApplication + 用户 QObject 子类带 `Q_PROPERTY` + `Q_INVOKABLE`），通过 stdin/stdout 行分隔 JSON 协议暴露。配 `qt_widget_introspect`；runtime introspection 三件套的**写**对端。
+- `qt_qproperty_set` — 驱动运行中的 helper .exe 发 `set_property` JSON 命令。运行时设 Q_PROPERTY 值。
+- `qt_meta_invoke` — 驱动运行中的 helper .exe 发 `invoke` JSON 命令。运行时调 Q_INVOKABLE / `QMetaObject::invokeMethod`。
 
-**Build / lint / install loop (4 tools)** — pairs with `qt_validate` + `qt_cmake` + `qt_build`.
+**Build / lint / install 闭环（4 个工具）** —— 配 `qt_validate` + `qt_cmake` + `qt_build`。
 
-- `qt_pro_lint` — 12-rule static lint of `.pro` files (duplicates, CONFIG conflicts, deprecated Qt5 modules, target naming, missing TEMPLATE, INCLUDEPATH absolute, etc.). `rule_ids` filter, text + json output. Companion to `qt_validate` (which finds *missing files*; this finds *syntactic / semantic* issues).
-- `qt_shadow_build_setup` — sets up `build-debug/` + `build-release/` shadow dirs, writes `.pro.user` (Qt Creator config) with `ShadowBuild=true`, and `build_shadow.bat` for one-click debug+release build. Pairs with `qt_build_cache` (ccache needs separate dirs to be effective).
-- `qt_qmlscene` — previews a `.qml` file via `qml.exe` + captures multi-DPI screenshots (`QT_SCALE_FACTOR` 1.0/1.5/2.0). Pairs with `qt_high_dpi_test` (which runs a full `.exe`; this skips the build step).
-- `qt_cmake_install` — generates `cmake/InstallRules.cmake` + `cmake/Packaging.cmake` (CPack NSIS) + `cmake_install/Windeployqt.cmake` + `build_installer.bat`. Closes the CMake install/packaging loop left open by `qt_cmake` (which only generates the top-level CMakeLists.txt).
+- `qt_pro_lint` — 12 条 `.pro` 静态 lint 规则（重复、CONFIG 冲突、Qt5 deprecated 模块、target 命名、TEMPLATE 缺失、INCLUDEPATH 绝对路径等）。`rule_ids` 过滤，text + json 输出。配 `qt_validate`（找**缺失文件**；本工具找**语法/语义问题**）。
+- `qt_shadow_build_setup` — 设 `build-debug/` + `build-release/` shadow 目录，写 `.pro.user`（Qt Creator 配置）带 `ShadowBuild=true`，加 `build_shadow.bat` 一键 debug+release 构建。配 `qt_build_cache`（ccache 需要独立目录才有效）。
+- `qt_qmlscene` — 通过 `qml.exe` 预览 `.qml` 文件 + 多 DPI 截图（`QT_SCALE_FACTOR` 1.0/1.5/2.0）。配 `qt_high_dpi_test`（跑完整 `.exe`；本工具跳过构建步骤）。
+- `qt_cmake_install` — 生成 `cmake/InstallRules.cmake` + `cmake/Packaging.cmake`（CPack NSIS）+ `cmake_install/Windeployqt.cmake` + `build_installer.bat`。收尾 `qt_cmake`（只生成顶层 CMakeLists.txt）留下的 CMake install/packaging 闭环。
 
-**Conda cross-platform (1 tool)** — pairs with `qt_conanfile_gen` (Conan). Two parallel package managers, pick whichever fits your team.
+**Conda 跨平台（1 个工具）** —— 配 `qt_conanfile_gen`（Conan）。两种并行包管理器，按团队偏好二选一。
 
-- `qt_conda_env_gen` — generates `environment.yml` (conda-forge) + `conda_install.bat` / `conda_install.sh` + `BUILD_README.md`. Maps Qt versions to conda-forge packages: Qt 5 (5.14.x / 5.15.x) → per-module `qt-*` packages; Qt 6 (6.5+) → umbrella `qt-main` + per-module `qt-main-qt*`. Cross-platform extras: Windows gets `vs2019_win-64`, Linux gets `libgl-devel` + `xorg-libxcb` + `xorg-libxkbcommon`.
+- `qt_conda_env_gen` — 生成 `environment.yml`（conda-forge）+ `conda_install.bat` / `conda_install.sh` + `BUILD_README.md`。把 Qt 版本映射到 conda-forge 包：Qt 5（5.14.x / 5.15.x）→ 每个模块一个 `qt-*` 包；Qt 6（6.5+）→ umbrella `qt-main` + 每个模块 `qt-main-qt*`。跨平台附加依赖：Windows 给 `vs2019_win-64`，Linux 给 `libgl-devel` + `xorg-libxcb` + `xorg-libxkbcommon`。
 
-**DB GUI integration (4 tools)** — pairs with `qt_db_seed` (v0.2.8, creates .db from schema). Closes the gap between creating a SQLite database and actually looking at it.
+**DB GUI 集成（4 个工具）** —— 配 `qt_db_seed`（v0.2.8，从 schema 创建 .db）。收尾"创建 SQLite 数据库 vs 真的去看它"之间的缺口。
 
-- `qt_db_open_in_gui` — opens a `.db` file in the user's preferred DB GUI client (SQLiteStudio by default, teacher-supplied reference; override via `QT_MCP_DBGUI_EXE` env var or `gui_exe` parameter). Detached launch.
-- `qt_db_schema_diff` — compares two `.db` files' schemas (tables / columns / indices) and emits migration SQL (`CREATE TABLE` / `ALTER TABLE ADD/DROP COLUMN` / `CREATE INDEX`). text + json output.
-- `qt_db_dump` — exports `.db` table(s) to **CSV** / **JSON** / **SQL dump** (CREATE TABLE + INSERTs). Single-table or all-tables.
-- `qt_db_validate` — runs three checks: `PRAGMA foreign_key_check` (FK constraint violations), `PRAGMA integrity_check` (index health), and an *orphan-row scan* (rows in child with no matching parent, even if FK wasn't declared). PASS/FAIL verdict.
+- `qt_db_open_in_gui` — 在用户偏好的 DB GUI 客户端（默认 SQLiteStudio，老师提供的参考；可通过 `QT_MCP_DBGUI_EXE` 环境变量或 `gui_exe` 参数覆盖）中打开 `.db` 文件。后台启动。
+- `qt_db_schema_diff` — 比较两个 `.db` 文件的 schema（表 / 列 / 索引）并生成迁移 SQL（`CREATE TABLE` / `ALTER TABLE ADD/DROP COLUMN` / `CREATE INDEX`）。text + json 输出。
+- `qt_db_dump` — 把 `.db` 表导出为 **CSV** / **JSON** / **SQL dump**（CREATE TABLE + INSERTs）。支持单表或所有表。
+- `qt_db_validate` — 跑三个检查：`PRAGMA foreign_key_check`（FK 约束违反）、`PRAGMA integrity_check`（索引健康）、**孤立行扫描**（子表中没有父表的行，即使 FK 没声明）。PASS/FAIL 结论。
 
-### Bug fixes (2)
+### Bug 修复（2）
 
-- `server.py` was missing `import csv` and `import io` (used by `qt_db_dump` for CSV output). Caught by `e2e_v23` test 30.
-- `qt_invoke_helper_gen` main.cpp template used Python `.format()` with raw-string literals containing `{{"ok", true}}` — `format()` interpreted `{"ok", true}` as a named placeholder, raising `KeyError`. Refactored to use `__CLASS_NAME__` / `__CLASS_LOWER__` / `__PROP_NAMES__` / `__METH_NAMES__` sentinels + chained `.replace()` (avoids the `{{` / `}}` escaping pitfall). Caught by `e2e_v23` tests 1 and 3.
+- `server.py` 缺 `import csv` 和 `import io`（被 `qt_db_dump` 用作 CSV 输出）。被 `e2e_v23` test 30 抓出。
+- `qt_invoke_helper_gen` 的 main.cpp 模板用 Python `.format()` 处理含 `{{"ok", true}}` 的 raw 字符串 —— `format()` 把 `{"ok", true}` 当成命名占位符，抛 `KeyError`。重构成用 `__CLASS_NAME__` / `__CLASS_LOWER__` / `__PROP_NAMES__` / `__METH_NAMES__` 哨兵 + 链式 `.replace()`（避开 `{{` / `}}` 转义陷阱）。被 `e2e_v23` tests 1 和 3 抓出。
 
-### Numbers
+### 数字
 
-- **123 tools** (v0.3.6 111 → v0.3.7 123, +12, +10.8%)
-- **server.py 23286 lines** (v0.3.6 20791 → v0.3.7 23286, +2495, +12%)
-- **28 e2e suites** (v0.3.6 27 → v0.3.7 28, +1 `e2e_new_tools_v23`)
-- **451 pytest tests** (v0.3.6 415 → v0.3.7 451, +36 e2e_v23, +8.7%; `python -m pytest -q` 451 passed in 170s)
-- e2e_v23: 36 pytest tests, 79 check 断言
-- 123/123 工具 e2e 覆盖 + docstring 完整 + JSON footer
+- **123 个工具**（v0.3.6 111 → v0.3.7 123，+12，+10.8%）
+- **server.py 23286 行**（v0.3.6 20791 → v0.3.7 23286，+2495，+12%）
+- **28 个 e2e 套件**（v0.3.6 27 → v0.3.7 28，+1 `e2e_new_tools_v23`）
+- **451 个 pytest 测试**（v0.3.6 415 → v0.3.7 451，+36 e2e_v23，+8.7%；`python -m pytest -q` 451 passed in 170s）
+- e2e_v23：36 个 pytest 测试，79 个 check 断言
+- 123/123 工具 e2e 覆盖 + docstring 完整 + JSON 段
 
 ## [0.3.6] — 2026-07-10
 
-### Added
+### 新增
 
-- **`qt_conanfile_gen`** — companion to `qt_pkg_install` (which installs Qt via aqtinstall) and `qt_cmake` (which emits CMakeLists.txt). Closes the cross-platform dependency-management gap: many Qt projects ship to Windows + Linux + macOS with different system Qt packages, and Conan is the de-facto way to pin a reproducible Qt build across all three. Generates both `conanfile.py` (full Python recipe with `requires` + `generators` + `env_info`) and `conanfile.txt` (minimal deps list), plus a `BUILD_README.md` with step-by-step instructions. With `emit_profile='auto'`, also writes `profiles/windows` + `profiles/linux` + `profiles/macos` (compiler.version configurable). Supports `use_system_qt=True` to skip the Conan Qt package and document setting `QTDIR` manually instead. Anchors Conan 1.x Qt 5.14.2 / 6.5.0 package-name conventions (`qt/5.14.2`, `qt/6.5.0`, …) via the `_CONAN_QT_PACKAGE` table.
-- **`qt_module_split_init`** — companion to `qt_scaffold` (which creates new projects) and `qt_cmake`. Closes the gap when a flat Qt project grows past ~1k lines: re-organising into a reusable library + thin app speeds rebuilds, lets multiple apps link the same code, and makes the library self-contained for tests. With `plan_only=True` (default) emits `module_split_plan.json` describing which files go into `lib/src/` + `lib/include/<libname>/` + `app/`. With `plan_only=False`, actually executes the moves (with `.qt_module_split_backup/` safety copy) + writes `lib/lib.pro` (`TEMPLATE = lib`, `TARGET = <libname>`, `DEFINES += QT_MAKEDLL`) + `app/app.pro` (links lib + keeps `main.cpp` + the main window) + rewrites the root `.pro` as `TEMPLATE = subdirs` + `SUBDIRS = lib app`. `file_patterns` (regex list) filters which files move into the lib target.
-- **`qt_modernize_qt5_to_qt6`** — companion to `qt_clazy_check` (which *flags* anti-patterns): this tool actually rewrites the source. Catches the most common Qt 5 → Qt 6 chokepoints so a release upgrade compiles without 30 minutes of find-and-replace. Rules: `qregexp_to_qregularexpression` (QRegExp → QRegularExpression, including `#include` lines), `q_nullptr_to_nullptr` (Q_NULLPTR[CONSTEXPR] → nullptr), `q_foreach_to_range_for` (Q_FOREACH/foreach → range-based for), `qvector_to_qlist` (QVector<T> → QList<T>), `remove_aa_usehighdpipixmaps` (drop `QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true)` — Qt 6 default), `qtextcodec_to_qstringconverter` (QTextCodec::codecForName → QStringConverter::encodingFor). `apply=False` (default) emits a per-file dry-run preview; `apply=True` writes `.bak` copies + applies the rewrites. `rule_ids` filter to apply only one rule at a time.
-- **`qt_signal_disconnect_check`** — companion to `qt_signal_slot_trace` (which maps *all* wires): this tool exposes *missing teardown*. Common lifetime bug: a `QObject` connects to a sender it should explicitly `disconnect()` from in its destructor, but the developer forgets. Walks `.cpp` + `.cc` + `.cxx`, extracts every `connect(...)` first arg and every `disconnect(...)` first arg, lists connect sites whose sender is never disconnected anywhere in the project. Output is text (grouped by sender) or JSON per file:line:sender. `ignore_self_disconnect=True` (default) skips `disconnect(this, …)` patterns (Qt handles those automatically). Strict cross-thread / DirectConnection checks remain in `qt_thread_affinity_check`.
-- **`qt_qml_perf_lint`** — companion to `qt_qml_lint` (which covers syntax + type-correctness + a few caching rules): this tool focuses on *runtime performance* in QML-heavy UIs. Rules: `inline_js_too_long` (function body > 50 lines — move to .js, QML JIT inline JS is slower than module .js), `image_synchronous_load` (`Image { … asynchronous: false }`), `transparent_mousearea` (`visible: false` without `enabled: false`), `loader_frequent_sourcechange` (source URL changes per frame), `deep_component_nesting` (> 5 levels — deep QML hierarchies increase binding-evaluation cost), `createobject_in_repeater` (`createQmlObject`/`createObject` inside Repeater delegate — frequent allocation per item). text + json, severity info vs warning, `rule_ids` filter, `file_patterns` configurability. Pure regex; complements `qmllint`.
+- **`qt_conanfile_gen`** — 配 `qt_pkg_install`（通过 aqtinstall 装 Qt）和 `qt_cmake`（生成 CMakeLists.txt）。收尾跨平台依赖管理的缺口：很多 Qt 项目要发到 Windows + Linux + macOS，系统 Qt 包各不相同，Conan 是三个平台 pin 可复现 Qt 构建的事实标准。同时生成 `conanfile.py`（带 `requires` + `generators` + `env_info` 的完整 Python recipe）和 `conanfile.txt`（极简依赖列表），加 `BUILD_README.md` 带分步说明。`emit_profile='auto'` 时也写 `profiles/windows` + `profiles/linux` + `profiles/macos`（compiler.version 可配）。`use_system_qt=True` 跳过 Conan Qt 包，改用文档说明手动设 `QTDIR`。通过 `_CONAN_QT_PACKAGE` 表锚定 Conan 1.x Qt 5.14.2 / 6.5.0 包名约定（`qt/5.14.2`、`qt/6.5.0` 等）。
+- **`qt_module_split_init`** — 配 `qt_scaffold`（创建新项目）和 `qt_cmake`。收尾平面 Qt 项目长到 ~1k 行后的缺口：拆成可复用 lib + 薄 app 加速重编译，让多个 app 链接同一份代码，让 lib 自包含便于测试。`plan_only=True`（默认）输出 `module_split_plan.json` 描述哪些文件去 `lib/src/` + `lib/include/<libname>/` + `app/`。`plan_only=False` 时真执行 move（带 `.qt_module_split_backup/` 安全副本）+ 写 `lib/lib.pro`（`TEMPLATE = lib`、`TARGET = <libname>`、`DEFINES += QT_MAKEDLL`）+ `app/app.pro`（链接 lib + 保留 `main.cpp` + 主窗口）+ 把根 `.pro` 重写成 `TEMPLATE = subdirs` + `SUBDIRS = lib app`。`file_patterns`（regex 列表）过滤哪些文件进 lib 目标。
+- **`qt_modernize_qt5_to_qt6`** — 配 `qt_clazy_check`（标记 anti-pattern）：本工具真改源码。抓最常见的 Qt 5 → Qt 6 卡点，让一次发布升级不需要 30 分钟的 find-and-replace。规则：`qregexp_to_qregularexpression`（QRegExp → QRegularExpression，含 `#include` 行）、`q_nullptr_to_nullptr`（Q_NULLPTR[CONSTEXPR] → nullptr）、`q_foreach_to_range_for`（Q_FOREACH / foreach → range-based for）、`qvector_to_qlist`（QVector<T> → QList<T>）、`remove_aa_usehighdpipixmaps`（去掉 `QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true)` —— Qt 6 默认）、`qtextcodec_to_qstringconverter`（QTextCodec::codecForName → QStringConverter::encodingFor）。`apply=False`（默认）输出逐文件 dry-run 预览；`apply=True` 写 `.bak` 副本 + 应用重写。`rule_ids` 过滤单跑一条规则。
+- **`qt_signal_disconnect_check`** — 配 `qt_signal_slot_trace`（映射所有线）：本工具暴露**漏配 disconnect** 的情况。常见生命周期 bug：QObject connect 了一个 sender 本应在析构里显式 `disconnect()`，但开发者忘了。遍历 `.cpp` + `.cc` + `.cxx`，提每个 `connect(...)` 第一参数和每个 `disconnect(...)` 第一参数，列出整个项目里 sender 从未被 disconnect 的 connect 点。输出 text（按 sender 分组）或 JSON 每 file:line:sender。`ignore_self_disconnect=True`（默认）跳过 `disconnect(this, …)` 模式（Qt 自动处理）。严格跨线程 / DirectConnection 检查仍在 `qt_thread_affinity_check`。
+- **`qt_qml_perf_lint`** — 配 `qt_qml_lint`（覆盖语法 + 类型正确性 + 少量缓存规则）：本工具聚焦 QML 重 UI 的**运行时性能**。规则：`inline_js_too_long`（函数体 > 50 行 —— 移到 .js，QML JIT 内联 JS 比模块 .js 慢）、`image_synchronous_load`（`Image { … asynchronous: false }`）、`transparent_mousearea`（`visible: false` 而无 `enabled: false`）、`loader_frequent_sourcechange`（每帧 source URL 变更）、`deep_component_nesting`（> 5 层 —— 深 QML 层级增加 binding 评估开销）、`createobject_in_repeater`（在 Repeater delegate 里 `createQmlObject` / `createObject` —— 每项频繁分配）。text + json，severity info vs warning，`rule_ids` 过滤，`file_patterns` 可配。纯正则；补 qmllint。
 
-### Removed from polish_plan candidates
+### 从 polish_plan 候选中砍掉
 
-- `qt_qobject_invoke` — same reasoning as v0.3.5: requires a Qt helper `.exe` bridge to call slots cross-process, exceeding single-sprint work. Runtime introspection is covered by `qt_widget_introspect` + `qt_console_messages` + `qt_runtime_props`.
-- `qt_gammaray_attach` — depends on KDAB GammaRay (external commercial/open-source tool); runtime introspection covered by existing 5 tools.
-- `qt_qml_performance_lint` (deep variant) — fully implemented as `qt_qml_perf_lint` in v0.3.6 instead of being deferred.
-- `qt_resource_validate` (per-platform variant) — the v0.3.4 eight-rule base was deemed sufficient.
-- `qt_qtquick_3d_setup` — Qt 5.14's `Qt Quick 3D` is an early-stage preview; clashing with the existing 9 scaffold templates. Punted to v0.3.7+ if user demand materialises.
+- `qt_qobject_invoke` —— 与 v0.3.5 同理由：需要 Qt helper `.exe` 桥接跨进程调 slot，超出单 sprint 工作量。Runtime introspection 由 `qt_widget_introspect` + `qt_console_messages` + `qt_runtime_props` 覆盖。
+- `qt_gammaray_attach` —— 依赖 KDAB GammaRay（外部商业/开源工具）；runtime introspection 已由已有 5 个工具覆盖。
+- `qt_qml_performance_lint`（深版）—— 完全在 v0.3.6 实现为 `qt_qml_perf_lint`，不再推迟。
+- `qt_resource_validate`（per-platform 版）—— v0.3.4 的 8 条基础规则已足够。
+- `qt_qtquick_3d_setup` —— Qt 5.14 的 `Qt Quick 3D` 是早期 preview；与已有 9 个脚手架模板冲突。若用户有需求再推到 v0.3.7+。
 
-### Bug fixes (5)
+### Bug 修复（5）
 
-- `qt_modernize_qt5_to_qt6` first implementation used `Path.with_suffix(".bak")` to compute the backup path; this produces `main.bak` (not `main.cpp.bak`). Switched to `bak = fp.parent / (fp.name + ".bak")`. Caught by `e2e_v22` test 11 on first pass.
-- `qt_qml_perf_lint` first implementation used a single-line guard (`"Image" in line and "asynchronous" in line`) before running the regex window — this missed any cross-line `Image { ... asynchronous: false }` blocks. Replaced with `re.finditer(r"\bImage\s*\{[^}]*?asynchronous\s*:\s*false", text, re.DOTALL)` so it walks across the whole brace-balanced block. Same fix applied to `transparent_mousearea`. Caught by `e2e_v22` tests 20, 21, 23.
-- `qt_qml_perf_lint` and `qt_modernize_qt5_to_qt6` files filter lists contained `".tmp"` in the path-parts skip set — but `SANDBOX_TMP` lives at `E:\Download_tools\QT\.tmp\`, so any test creating project trees inside `SANDBOX_TMP/.../main.qml` was silently skipped (`Files scanned: 0`). Removed `.tmp` from both skip lists. This is the same v0.2.5 (`qt_cmake`) and v0.3.2 (`qt_format_check`) lesson recurring in v0.3.6 — codified in the inline comment "NO .tmp — would skip files under SANDBOX_TMP". Caught by `e2e_v22` tests 11 + 25 on second pass.
-- `e2e_v22` test 11 (`qt_modernize_qt5_to_qt6 apply=True`) initially asserted `"ok" in out.lower()` — but the modernise summary doesn't emit the literal "OK" (only the structured `=== … ===` header). Switched the success check to `"===" in out` so it matches the actual output. Caught by the e2e run when the tool was producing correct output but the check was wrong.
-- `e2e_v22` test 7 (`qt_module_split_init` `lib.pro has TARGET = engine`) initially compared the literal `TARGET = engine` — but the recipe generator emits `TARGET   = engine` (4-space alignment). Switched to `re.search(r"TARGET\s*=\s*engine", text)` so it tolerates any whitespace layout.
+- `qt_modernize_qt5_to_qt6` 初版用 `Path.with_suffix(".bak")` 算备份路径；这生成 `main.bak`（不是 `main.cpp.bak`）。改成 `bak = fp.parent / (fp.name + ".bak")`。被 `e2e_v22` test 11 首跑抓出。
+- `qt_qml_perf_lint` 初版在跑 regex 窗口前用单行 guard（`"Image" in line and "asynchronous" in line`）—— 这漏掉跨行的 `Image { ... asynchronous: false }` 块。改成 `re.finditer(r"\bImage\s*\{[^}]*?asynchronous\s*:\s*false", text, re.DOTALL)`，跨整 brace-balanced 块走。`transparent_mousearea` 同修。被 `e2e_v22` tests 20、21、23 抓出。
+- `qt_qml_perf_lint` 和 `qt_modernize_qt5_to_qt6` 文件过滤列表的 path-parts skip 集里含 `".tmp"` —— 但 `SANDBOX_TMP` 在 `E:\Download_tools\QT\.tmp\` 下，任何在 `SANDBOX_TMP/.../main.qml` 下建项目树的测试都被静默跳过（`Files scanned: 0`）。从两个 skip 列表去掉 `.tmp`。这是同一 v0.2.5（`qt_cmake`）和 v0.3.2（`qt_format_check`）教训在 v0.3.6 重现 —— 写成行内注释 "NO .tmp — would skip files under SANDBOX_TMP"。被 `e2e_v22` tests 11 + 25 二跑抓出。
+- `e2e_v22` test 11（`qt_modernize_qt5_to_qt6 apply=True`）最初断言 `"ok" in out.lower()` —— 但 modernize 摘要不发字面 "OK"（只有结构化 `=== … ===` 头）。把成功检查改成 `"===" in out`，匹配实际输出。
+- `e2e_v22` test 7（`qt_module_split_init` `lib.pro has TARGET = engine`）最初比较字面 `TARGET = engine` —— 但 recipe 生成器输出 `TARGET   = engine`（4 空格对齐）。改成 `re.search(r"TARGET\s*=\s*engine", text)`，容忍任意空白布局。
 
-### Numbers
+### 数字
 
-- **111 tools** (v0.3.5 106 → v0.3.6 111, +5, +4.7%)
-- **server.py 20791 lines** (v0.3.5 19395 → v0.3.6 20791, +1396, +7.2%)
-- **27 e2e suites** (v0.3.5 26 → v0.3.6 27, +1 `e2e_new_tools_v22`)
+- **111 个工具**（v0.3.5 106 → v0.3.6 111，+5，+4.7%）
+- **server.py 20791 行**（v0.3.5 19395 → v0.3.6 20791，+1396，+7.2%）
+- **27 个 e2e 套件**（v0.3.5 26 → v0.3.6 27，+1 `e2e_new_tools_v22`）
 
-### Key design decisions
+### 关键设计决策
 
-- `qt_module_split_init` defaults to `plan_only=True` — every destructive move must be explicitly opted into, matching the existing pattern (`qt_documentation_auto_fill.apply=False`, `qt_translation_auto_fill.apply=False`, `qt_signal_lint_fix.apply=False`).
-- `qt_conanfile_gen` writes both `conanfile.py` (heavy) *and* `conanfile.txt` (light). Different teams prefer one or the other; emitting both lets the user delete whichever they don't need.
-- `qt_modernize_qt5_to_qt6` is intentionally conservative: only transforms that are unambiguous textual equivalents. Complex rewrites (e.g. `QStringLiteral`-vs-`u""` literal collapsing, signal-pointer-syntax migration) are out of scope — they require AST-level analysis.
-- `qt_qml_perf_lint` severity colours: `inline_js_too_long` / `image_synchronous_load` / `deep_component_nesting` / `createobject_in_repeater` are `warning` (impact real perf); `transparent_mousearea` / `loader_frequent_sourcechange` are `info` (context-dependent).
-- All five new tools use the `_require_sandbox(...) -> error_string` convention; all call `_json_footer(...)`; all carry full Args/Returns/Raises docstrings; all are listed in `qt_cheatsheet`.
+- `qt_module_split_init` 默认 `plan_only=True` —— 每个破坏性 move 必须显式 opt-in，配已有模式（`qt_documentation_auto_fill.apply=False`、`qt_translation_auto_fill.apply=False`、`qt_signal_lint_fix.apply=False`）。
+- `qt_conanfile_gen` 同时写 `conanfile.py`（重）+ `conanfile.txt`（轻）。不同团队偏好其一；同时发让用户删掉不需要的。
+- `qt_modernize_qt5_to_qt6` 故意保守：只做文本无歧义等价的转换。复杂改写（如 `QStringLiteral` vs `u""` 字面量合并、signal-pointer 语法迁移）超出范围 —— 需要 AST 级分析。
+- `qt_qml_perf_lint` 严重度配色：`inline_js_too_long` / `image_synchronous_load` / `deep_component_nesting` / `createobject_in_repeater` 是 `warning`（影响真实性能）；`transparent_mousearea` / `loader_frequent_sourcechange` 是 `info`（上下文相关）。
+- 五个新工具都用 `_require_sandbox(...) -> error_string` 约定；都调 `_json_footer(...)`；都带完整 Args / Returns / Raises docstring；都列在 `qt_cheatsheet`。
 
 ## [0.3.5] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_complexity_lint`** — McCabe-style cyclomatic complexity per C++ function. Walks `.cpp / .cc / .cxx / .h` files, regex-extracts function signatures, brace-matches each function body, strips comment + string/char literals so `if (s == "if")` doesn't count, then counts branch keywords (`if` / `else if` / `while` / `for` / `case` / `catch`) + short-circuit operators (`&&` / `||`) + ternary (`?:`). McCabe = 1 + count. Flags functions with complexity ≥ `threshold` (default 12, rule-of-thumb "10±2"). Closes the "per-function complexity" axis that cppcheck / clazy / qmllint don't cover (cppcheck covers interprocedural paths, not per-function branches). text + json output + avg + verdict (PASS/FAIL). `exclude_dirs` skips build dirs / `.git` / `node_modules`. Zero new dependencies — pure regex. Companion to `qt_clazy_check` (anti-patterns), `qt_cppcheck` (real C++ static analysis), `qt_signal_slot_trace` (signal graph), `qt_format_check` (style).
-- **`qt_git_audit`** — companion to `qt_git_init` (v0.3.0, which only initialises the repo). Audits an existing repo's history for project-governance signals no Qt tool usually surfaces: **hot files** (top-N by commit count, signals refactor / extract candidates), **bus factor** (top contributor's share %; >60% = high risk, >40% = elevated), **churn** (LOC added/removed + density LOC/day in the last `since_days` window), **stale branches** (no commit in `stale_days`), **biggest commit** (largest single-commit files-changed — catches "drive-by mega commits"). Subprocess `git log --pretty=format --numstat` + `git for-each-ref --format` walks. text + json output.
-- **`qt_appx`** — companion to `qt_installer_gen` (v0.2.8 — NSIS / Inno Setup for local distribution). Generates the artifacts needed to publish on the Microsoft Store: `AppxManifest.xml` (with `runFullTrust` capability — required for Qt apps), `build_appx.bat` (runs `makeappx.exe pack` + `signtool sign` in sequence), `appx_logos.md` (documents the four required PNG logo sizes — 50/44/150/310). Like `qt_installer_gen`, only generates — does not invoke Windows SDK tools because they're not part of Qt SDK. `architecture` ∈ {`x86`, `x64`, `arm64`}. Package name derived from publisher CN + app_name, sanitised to fit the reverse-DNS form.
-- **`qt_ide_metadata`** — companion to `qt_creator_open` (which only targets Qt Creator). Generates IDE metadata so users can debug their Qt project from **VSCode** or **CLion** without Qt Creator. `.vscode/launch.json` (gdb debug config, auto-selects mingw32/64), `.vscode/tasks.json` (qmake / build / run / clean), `.vscode/c_cpp_properties.json` (includePath + defines extracted via `_pro_parse` from the project's `.pro`), `.vscode/extensions.json` (recommended: `ms-vscode.cpptools` + `cmake-tools` + `jbenden.c-cpp-flyclang` + `gitlens`). With `ide='both'`, also writes `.idea/workspace.xml` for CLion. Auto-detects the `.exe` from `build-debug/debug/*.exe` etc. if `launch_exe` is empty.
-- **`qt_runtime_props`** — companion to `qt_widget_introspect` (which shows the widget tree shape). Goes one level deeper and reads each widget's *live accessible properties* (mapped via UI Automation from Qt `setAccessibleName` / `setAccessibleDescription` + `setObjectName`) by attaching via pywinauto. Borrowed from `0xCarbon/qt-mcp`'s `qt_props` concept. Either attach to running `process_id` or auto-spawn `executable` (always killed before returning). Snapshots every widget with an `objectName` + text in the tree, prints the current state. For full `QMetaObject::property()` values the user must compile a helper into their project — a ready-to-paste hint is printed at the bottom of every output.
-- **`qt_test_fuzz`** — companion to `qt_sanitizer_run` (memory safety), `qt_smoke_test` (smoke), `qt_perf_budget` (perf), `qt_test` (unit tests). Closes the "fuzzing" leg of the quality-gate quad: smoke / perf / correctness / crash-with-malformed-input. Generates a libFuzzer harness (`LLVMFuzzerTestOneInput` + `LLVMFuzzerRunMain` main when `__has_libfuzzer`) wrapping the user-specified `target_function` (a `Q_INVOKABLE`), a `.pro` patch snippet (`QMAKE_CXXFLAGS += -fsanitize=fuzzer-no-link -fno-omit-frame-pointer`, `QMAKE_LFLAGS += -fsanitize=fuzzer -lstdc++`), and a `fuzz_README.md` documenting MinGW-vs-Clang compatibility + 4-step usage. MinGW's bundled GCC 7.x does not ship libFuzzer (the bundled GCC is older than fuzzer-supporting releases); the README warns clearly and recommends `compiler='clang++'` (LLVM's official installer) for full libFuzzer support.
+- **`qt_complexity_lint`** — McCabe 风格圈复杂度（C++ 函数级）。遍历 `.cpp / .cc / .cxx / .h`，regex 提函数签名，brace-match 每个函数体，剥离注释 + 字符串/字符字面量（这样 `if (s == "if")` 不计数），然后数分支关键字（`if` / `else if` / `while` / `for` / `case` / `catch`）+ 短路操作符（`&&` / `||`）+ 三目（`?:`）。McCabe = 1 + 计数。标记复杂度 ≥ `threshold`（默认 12，经验法则 "10±2"）的函数。补 cppcheck / clazy / qmllint 不覆盖的"逐函数复杂度"维度（cppcheck 覆盖跨过程路径，不覆盖逐函数分支）。text + json 输出 + 平均 + 结论（PASS/FAIL）。`exclude_dirs` 跳过 build 目录 / `.git` / `node_modules`。零新依赖 —— 纯正则。配 `qt_clazy_check`（anti-pattern）、`qt_cppcheck`（真 C++ 静态分析）、`qt_signal_slot_trace`（信号图）、`qt_format_check`（风格）。
+- **`qt_git_audit`** — 配 `qt_git_init`（v0.3.0，只初始化仓库）。审计已有仓库历史，暴露一般 Qt 工具不报的项目治理信号：**热文件**（按 commit 数 top-N，提示重构/抽取候选）、**bus factor**（头号贡献者占比 %；>60% = 高风险，>40% = 警戒）、**churn**（在 `since_days` 窗口里 LOC 加/删 + 密度 LOC/天）、**stale branches**（`stale_days` 内无 commit）、**最大 commit**（单 commit 文件变更数最大 —— 抓"顺手大改"）。subprocess `git log --pretty=format --numstat` + `git for-each-ref --format` 遍历。text + json 输出。
+- **`qt_appx`** — 配 `qt_installer_gen`（v0.2.8 —— 本地分发的 NSIS / Inno Setup）。生成 Microsoft Store 发布所需制品：`AppxManifest.xml`（带 `runFullTrust` capability —— Qt 应用必需）、`build_appx.bat`（顺序跑 `makeappx.exe pack` + `signtool sign`）、`appx_logos.md`（文档四个必需 PNG logo 尺寸 —— 50/44/150/310）。和 `qt_installer_gen` 一样只生成 —— 不调 Windows SDK 工具，因为它们不随 Qt SDK 发。`architecture` ∈ {`x86`、`x64`、`arm64`}。包名由 publisher CN + app_name 派生，sanitize 成 reverse-DNS 形式。
+- **`qt_ide_metadata`** — 配 `qt_creator_open`（只针对 Qt Creator）。生成 IDE metadata，让用户从 **VSCode** 或 **CLion** 调试 Qt 项目而不用 Qt Creator。`.vscode/launch.json`（gdb 调试配置，自动选 mingw32/64）、`.vscode/tasks.json`（qmake / build / run / clean）、`.vscode/c_cpp_properties.json`（includePath + defines 通过 `_pro_parse` 从项目 `.pro` 提取）、`.vscode/extensions.json`（推荐：`ms-vscode.cpptools` + `cmake-tools` + `jbenden.c-cpp-flyclang` + `gitlens`）。`ide='both'` 还写 `.idea/workspace.xml` 给 CLion。`launch_exe` 为空时从 `build-debug/debug/*.exe` 等自动检测 .exe。
+- **`qt_runtime_props`** — 配 `qt_widget_introspect`（展示 widget 树形状）。深入一层，通过 pywinauto 读每个 widget 的**实时 accessible properties**（从 Qt `setAccessibleName` / `setAccessibleDescription` + `setObjectName` 通过 UI Automation 映射）。借自 `0xCarbon/qt-mcp` 的 `qt_props` 概念。可以 attach 到运行中的 `process_id` 或自动启动 `executable`（返回前总 kill）。快照每个有 `objectName` + 文本的 widget，打印当前状态。完整 `QMetaObject::property()` 值需要编译一个 helper 进项目 —— 每次输出末尾打印 ready-to-paste 提示。
+- **`qt_test_fuzz`** — 配 `qt_sanitizer_run`（内存安全）、`qt_smoke_test`（smoke）、`qt_perf_budget`（perf）、`qt_test`（单元测试）。收尾质量门四足里的"fuzzing"：smoke / perf / correctness / crash-with-malformed-input。生成 libFuzzer 框架（`LLVMFuzzerTestOneInput` + 有 `__has_libfuzzer` 时的 `LLVMFuzzerRunMain` main）包装用户指定的 `target_function`（Q_INVOKABLE），加 `.pro` patch 片段（`QMAKE_CXXFLAGS += -fsanitize=fuzzer-no-link -fno-omit-frame-pointer`、`QMAKE_LFLAGS += -fsanitize=fuzzer -lstdc++`），加 `fuzz_README.md` 文档 MinGW-vs-Clang 兼容性 + 4 步用法。MinGW 自带 GCC 7.x 不带 libFuzzer（自带的 GCC 比支持 fuzzer 的版本老）；README 明确警告并推荐 `compiler='clang++'`（LLVM 官方安装器）以获得完整 libFuzzer 支持。
 
-### Removed from polish_plan candidates
+### 从 polish_plan 候选中砍掉
 
-- `qt_qobject_invoke` — overlaps with `qt_ui_action` + `qt_widget_introspect` + `qt_console_messages` (all are runtime-introspection variants). Requires a Qt helper `.exe` bridge to call slots cross-process, exceeding single-sprint work.
-- `qt_gammaray_attach` — depends on KDAB GammaRay (external commercial/open-source tool); runtime introspection is already adequately covered by `qt_widget_introspect` + `qt_console_messages`.
-- `qt_qml_performance_lint` — overlaps with `qmllint`'s built-in `ListView cacheBuffer` / `Repeater` nesting / etc. performance rules.
-- `qt_resource_validate` (deeper variant) — v0.3.4's eight-rule base already covers naming / collision / depth / size / prefix. Per-platform rule-sets + auto-fix were deemed marginal.
+- `qt_qobject_invoke` —— 与 `qt_ui_action` + `qt_widget_introspect` + `qt_console_messages`（都是 runtime-introspection 变种）重叠。需要 Qt helper `.exe` 桥接跨进程调 slot，超出单 sprint 工作量。
+- `qt_gammaray_attach` —— 依赖 KDAB GammaRay（外部商业/开源工具）；runtime introspection 已被 `qt_widget_introspect` + `qt_console_messages` 充分覆盖。
+- `qt_qml_performance_lint` —— 与 `qmllint` 内置 `ListView cacheBuffer` / `Repeater` nesting 等性能规则重叠。
+- `qt_resource_validate`（深版）—— v0.3.4 的 8 条基础规则已覆盖命名 / 冲突 / 深度 / 大小 / 前缀。per-platform 规则集 + 自动 fix 视为边际。
 
-### Numbers
+### 数字
 
-- **106 tools** (v0.3.4 100 → v0.3.5 106, +6, +6.0%)
-- **server.py 19395 lines** (v0.3.4 17968 → v0.3.5 19395, +1427, +7.9%)
-- **26 e2e suites** (v0.3.4 25 → v0.3.5 26, +1 `e2e_new_tools_v21`)
-- **390 pytest tests** (v0.3.4 367 → v0.3.5 390, +23, +6.3%)
+- **106 个工具**（v0.3.4 100 → v0.3.5 106，+6，+6.0%）
+- **server.py 19395 行**（v0.3.4 17968 → v0.3.5 19395，+1427，+7.9%）
+- **26 个 e2e 套件**（v0.3.4 25 → v0.3.5 26，+1 `e2e_new_tools_v21`）
+- **390 个 pytest 测试**（v0.3.4 367 → v0.3.5 390，+23，+6.3%）
 
-### v0.3.6 update — see [0.3.6] section above for details
+### v0.3.6 更新 —— 详见上面 [0.3.6] 段
 
-- **111 tools** (106 → 111, +5)
-- **server.py 20791 lines** (19395 → 20791, +1396, +7.2%)
-- **27 e2e suites** (26 → 27, +1 `e2e_new_tools_v22`)
-- **415 pytest tests** (390 → 415, +25 new, +6.4%; full suite **415 passed in 155s**)
-- `e2e_v21`: **23 pytest tests / 52 checks**, all pass on first run after 2 fixes.
-- 106/106 tools have e2e coverage + docstring (Args/Returns/Raises/Note) + JSON trailer.
+- **111 个工具**（106 → 111，+5）
+- **server.py 20791 行**（19395 → 20791，+1396，+7.2%）
+- **27 个 e2e 套件**（26 → 27，+1 `e2e_new_tools_v22`）
+- **415 个 pytest 测试**（390 → 415，+25，+6.4%；全套 **415 passed in 155s**）
+- `e2e_v21`：**23 个 pytest 测试 / 52 个 checks**，2 修后首跑全过。
+- 106/106 工具有 e2e 覆盖 + docstring（Args / Returns / Raises / Note）+ JSON 段。
 
-### Key design decisions
+### 关键设计决策
 
-- **`qt_complexity_lint` is *pure regex*** — mirrors `qt_clazy_check`'s no-deps approach. The alternative (libclang Python bindings) adds a heavy dependency for marginal accuracy gain; McCabe on plain source is sufficient for CI gating.
-- **`qt_complexity_lint` strips strings/comments** so `if (s == "if")` doesn't count (same trick `qt_signal_slot_trace` uses via `_sst_strip_comments`).
-- **`qt_git_audit` starts from `os.environ.copy()`** in tests — passing `env=` to subprocess wipes `HOME`/`PATH`, which can break `git init` in some Windows configs. (v0.3.4 qt_test_fuzz gotcha)
-- **`qt_appx` does not call `makeappx.exe`** — Windows SDK is not bundled with Qt 5.14 SDK; only the artifacts + build script are generated (user runs `build_appx.bat` after installing SDK). Same pattern as `qt_installer_gen` (NSIS not invoked).
-- **`qt_ide_metadata` extracts `INCLUDEPATH` + `DEFINES` from `.pro`** via the existing `_pro_parse` + `_pro_tokenize` helpers — no re-implementation of the qmake grammar. The `c_cpp_properties.json` references the absolute Qt include path so IntelliSense works on first open.
-- **`qt_runtime_props` is a *widget-property snapshot*, not full QMetaObject introspection** — the latter requires a helper `.exe` compiled into the target project (we can't read QMetaObject state from outside the process). The tool prints a ready-to-paste hint pointing to a future `qt-mcp` helper snippet for users who need the full introspection.
-- **`qt_test_fuzz` *generates only*, does not build/run** — `-fsanitize=fuzzer` is unsupported by MinGW's bundled GCC 7.x, and `clang++` may not be installed. Auto-building would always fail on the common MinGW-only configuration. The README explains the 4-step manual flow.
+- **`qt_complexity_lint` 纯正则** —— 镜像 `qt_clazy_check` 的零依赖思路。备选（libclang Python 绑定）为边际准确度换重依赖；纯源码 McCabe 足够 CI gate。
+- **`qt_complexity_lint` 剥字符串/注释** —— 这样 `if (s == "if")` 不计数（与 `qt_signal_slot_trace` 通过 `_sst_strip_comments` 用的同一招）。
+- **`qt_git_audit` 从 `os.environ.copy()` 起** —— 测试里传 `env=` 给 subprocess 会清空 `HOME`/`PATH`，在某些 Windows 配置下会让 `git init` 出问题。（v0.3.4 qt_test_fuzz 的坑）
+- **`qt_appx` 不调 `makeappx.exe`** —— Windows SDK 不随 Qt 5.14 SDK 发；只生成制品 + 构建脚本（用户装好 SDK 后跑 `build_appx.bat`）。同 `qt_installer_gen`（不调 NSIS）的模式。
+- **`qt_ide_metadata` 从 `.pro` 抽 `INCLUDEPATH` + `DEFINES`** —— 通过已有 `_pro_parse` + `_pro_tokenize` helpers —— 不重写 qmake 语法。`c_cpp_properties.json` 引用绝对 Qt include 路径，让 IntelliSense 首次打开就能用。
+- **`qt_runtime_props` 是 widget property 快照，不是完整 QMetaObject introspection** —— 后者需要在目标项目里编译一个 helper .exe（我们不能从进程外读 QMetaObject 状态）。工具打印 ready-to-paste 提示，指向未来 `qt-mcp` helper 片段，给需要完整 introspection 的用户。
+- **`qt_test_fuzz` 只生成，不构建/跑** —— `-fsanitize=fuzzer` 不被 MinGW 自带 GCC 7.x 支持，`clang++` 可能没装。自动构建在常见 MinGW-only 配置上总失败。README 解释 4 步手动流。
 
-### Module-level consistency
+### 模块级一致性
 
-- No regex name collisions with the existing 25+ module-level regex constants (e.g. `_QRC_FILE_RE`, `_INPUT_RECORDER_RECORD_PY`, `_HR_QPROP_RE`, `_LAYOUT_CHECK_RULES`, `_AFFINITY_RULES`, `_RESOURCE_VALIDATE_RULES`, `_LCOV_*_RE`). All new patterns prefixed `_CX_` / `_GA_` / `_APPX_*` / `_IDE_*` / `_RP_*` / `_FUZZ_*`.
+- 与已有 25+ 个模块级正则常量（如 `_QRC_FILE_RE`、`_INPUT_RECORDER_RECORD_PY`、`_HR_QPROP_RE`、`_LAYOUT_CHECK_RULES`、`_AFFINITY_RULES`、`_RESOURCE_VALIDATE_RULES`、`_LCOV_*_RE`）无重名。所有新 pattern 加前缀 `_CX_` / `_GA_` / `_APPX_*` / `_IDE_*` / `_RP_*` / `_FUZZ_*`。
 
 ## [0.3.4] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_perf_compare`** — companion to `qt_perf_budget` (v0.3.2): that tool checks "does it run FAST enough against a budget"; this tool checks "is it AS FAST as last time?". Reads a baseline JSON (from `qt_perf_budget` or prior `qt_perf_compare`), spawns the `.exe`, measures fresh `first_cpu_ms` + `first_window_ms` via the same `_perf_first_cpu_active` (psutil) + `_perf_find_window_for_pid` (pywinauto) helpers, compares against baseline, reports `PASS` if either delta is below `regression_ms` (default 200ms), `FAIL` otherwise. Always kills the spawned process before returning. CI gate for "did this release get slower?".
-- **`qt_resource_validate`** — companion to `qt_resources` (v0.2.7): that tool's `validate` action only checks file existence + duplicate entries; this tool deep-validates with eight rules: `naming_convention` (filename must match `^[a-z0-9_-/.]+$` — no spaces, no uppercase, no special chars), `case_collision` (two entries differing only in case — collide on Windows/macOS), `path_too_deep` (depth > `max_path_depth` default 8), `file_too_large` (> `max_file_size_kb` default 512 KB — slow resource load), `prefix_conflict` (two `<qresource prefix>` blocks with overlapping sub-paths), `duplicate_entry`, `missing_on_disk`, `unusual_extension` (`.exe/.dll/.so/.bat/.cmd/.sh/.ps1/.msi`). Reuses `_qrc_parse` helper. Per-finding severity counts + `result` PASS/FAIL (error-severity findings fail). text + json output.
-- **`qt_test_coverage_diff`** — companion to `qt_coverage` (v0.2.3): that tool generates a single lcov `.info`; this tool compares two `.info` files (baseline vs current) to detect coverage regressions. Custom lcov parser (`_LCOV_SF_RE` / `_LCOV_LF_RE` / `_LCOV_LH_RE`) extracts `{filename: (LF, LH)}` per file. Computes per-file delta, overall delta, lists regressions (delta < −`regression_threshold`) and improvements. `result` is `FAIL` if any per-file drop > threshold or overall coverage dropped > threshold. `source_filter` substring lets you scope to `src/` etc. text + json output. CI gate against coverage regression.
-- **`qt_screenshot_baseline_capture`** — companion to `qt_screenshot_diff` (v0.2.7): that tool compares two PNGs; this tool *captures* the baseline PNG(s) automatically across multiple DPI scale factors. For each `scale_factors` value (default `[1.0, 1.5, 2.0]`): spawn the `.exe` with `QT_SCALE_FACTOR` set, sleep `wait_seconds`, capture window via `pywinauto.capture_as_image()`, save as `baseline_<scale>x.png`, compute sha1. Writes a `manifest.json` with `{label, executable, captured_at, scale_factors: [...]}` for traceability. Always kills the spawned process before moving on. text + json output. Visual regression CI workflow: capture baseline → change code → diff current vs baseline.
-- **`qt_console_messages`** — companion to `qt_log` (v0.2.2) + `qt_run_trace` (v0.2.0): those tools analyze already-written log files or set env vars at spawn; this tool *attaches* to a running Qt process (or spawns one) and reads console-like text widgets (`QPlainTextEdit` / `QTextEdit` / `QLabel` / `QStatusBar`) via pywinauto + UI Automation. Inspired by `0xCarbon/qt-mcp`'s `qt_messages` concept. Applies `level_filter` regex (default `debug|warning|critical|fatal`), truncates to `max_messages` (default 500), optional `auto_id_contains` substring filter on `objectName`. Always kills spawned process before returning. text + json output.
+- **`qt_perf_compare`** — 配 `qt_perf_budget`（v0.3.2）：那个工具检查"对预算是否够快"；本工具检查"和上次是否一样快"。读 baseline JSON（来自 `qt_perf_budget` 或上一次 `qt_perf_compare`），spawn `.exe`，通过同样的 `_perf_first_cpu_active`（psutil）+ `_perf_find_window_for_pid`（pywinauto）helpers 测新的 `first_cpu_ms` + `first_window_ms`，与 baseline 对比，任何 delta < `regression_ms`（默认 200ms）即报告 `PASS`，否则 `FAIL`。返回前总 kill 启动的进程。CI gate 应对"这次发布是不是变慢了？"。
+- **`qt_resource_validate`** — 配 `qt_resources`（v0.2.7）：那个工具的 `validate` action 只检查文件存在 + 重复条目；本工具深度验证，8 条规则：`naming_convention`（文件名必须匹配 `^[a-z0-9_-/.]+$` —— 无空格、无大写、无特殊字符）、`case_collision`（两个只大小写不同的条目 —— 在 Windows / macOS 上撞）、`path_too_deep`（深度 > `max_path_depth` 默认 8）、`file_too_large`（> `max_file_size_kb` 默认 512 KB —— 资源加载慢）、`prefix_conflict`（两个 `<qresource prefix>` 块子路径重叠）、`duplicate_entry`、`missing_on_disk`、`unusual_extension`（`.exe / .dll / .so / .bat / .cmd / .sh / .ps1 / .msi`）。复用 `_qrc_parse` helper。按 severity 计数 finding + `result` PASS/FAIL（error 级 finding 失败）。text + json 输出。
+- **`qt_test_coverage_diff`** — 配 `qt_coverage`（v0.2.3）：那个工具生成单个 lcov `.info`；本工具比较两个 `.info` 文件（baseline vs 当前）以检测覆盖率回归。自写 lcov 解析器（`_LCOV_SF_RE` / `_LCOV_LF_RE` / `_LCOV_LH_RE`）按文件抽 `{filename: (LF, LH)}`。算逐文件 delta、整体 delta，列出回归（delta < −`regression_threshold`）和改进。`result` 是 `FAIL` 若任一逐文件下降 > threshold 或整体覆盖率下降 > threshold。`source_filter` 子串可限制范围到 `src/` 等。text + json 输出。CI gate 防覆盖率回归。
+- **`qt_screenshot_baseline_capture`** — 配 `qt_screenshot_diff`（v0.2.7）：那个工具比较两张 PNG；本工具自动**采集** baseline PNG（跨多 DPI 缩放）。对每个 `scale_factors` 值（默认 `[1.0, 1.5, 2.0]`）：用 `QT_SCALE_FACTOR` spawn `.exe`，sleep `wait_seconds`，通过 `pywinauto.capture_as_image()` 截窗口，存为 `baseline_<scale>x.png`，算 sha1。写 `manifest.json` 带 `{label, executable, captured_at, scale_factors: [...]}` 便于追溯。返回前总 kill 启动的进程。text + json 输出。视觉回归 CI 流：采 baseline → 改代码 → diff 当前 vs baseline。
+- **`qt_console_messages`** — 配 `qt_log`（v0.2.2）+ `qt_run_trace`（v0.2.0）：那些工具分析已写的 log 文件或在 spawn 时设环境变量；本工具**attach** 到运行中的 Qt 进程（或 spawn 一个），通过 pywinauto + UI Automation 读控制台类文本 widget（`QPlainTextEdit` / `QTextEdit` / `QLabel` / `QStatusBar`）。借自 `0xCarbon/qt-mcp` 的 `qt_messages` 概念。应用 `level_filter` regex（默认 `debug|warning|critical|fatal`），按 `max_messages` 截断（默认 500），可选 `auto_id_contains` 子串过滤 `objectName`。返回前总 kill 启动的进程。text + json 输出。
 
 ## [0.3.3] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_widget_introspect`** — inspired by `0xCarbon/qt-mcp`'s runtime widget-tree trio (`qt_snapshot` / `qt_find_widget` / `qt_widget_details`). Inspect a *running* Qt app via `pywinauto` + UI Automation with three actions in one tool: `snapshot` (full widget tree as nested JSON, configurable `max_depth`), `find` (search by `name_contains` / `type_contains` / `text_contains`, AND-combined, returns flat list of matches), `details` (full properties for a widget by `auto_id` — the Qt `setObjectName` exposed as UI Automation's `AutomationId`). Either attach to a running `process_id` or auto-launch `executable` (detached, always killed). json output. Companion to `qt_ui_action` (which *drives* actions) — this tool *observes* state.
-- **`qt_layout_check`** — static check of `.ui` files (XML parsed via ElementTree) for layout anti-patterns. Inspired by `0xCarbon/qt-mcp`'s runtime `qt_layout_check`, runs statically (no app launch). Five rules: `widget_no_layout_parent` (warning), `deep_nesting` (>5 levels, warning), `duplicated_object_name` (breaks `findChild`/UI Automation, warning), `layout_no_stretch` (info), `fixed_size_in_expanding_layout` (info). Severity filter; text + json output.
-- **`qt_cppcheck`** — run `cppcheck --json --library=qt` on a directory or single file. Defensive JSON parser (cppcheck sometimes emits one object per file, sometimes a single object with a `diagnostics` array). Aggregates per-severity counts (`error`/`warning`/`style`/`performance`/`portability`/`information`) into a CI-friendly report. Auto-resolves `cppcheck` via `QT_CPPCHECK_EXE` env var → `PATH`; explicit `cppcheck_exe` overrides both. Severity filter. text + json output. Complements `qt_clazy_check` (regex-only, zero-dependency) and `qt_lint` (cpplint + qmllint + clang-tidy) — `qt_cppcheck` shells out to a real `cppcheck` binary for deeper analysis.
-- **`qt_thread_affinity_check`** — static analysis of QObject signal/slot cross-thread mistakes that `qt_async_await_lint` doesn't catch. Four rules: `direct_connection_cross_thread` (Qt::DirectConnection + `moveToThread()` in same file — warning), `emit_without_queued_connection` (emit + `moveToThread()` — info), `qthread_run_without_exec` (QThread subclass without `exec()` in `run()` — warning), `qobject_constructed_in_worker_thread` (`new QObject()` in `QThread::run()`/`QRunnable::run()` — info). Each rule has a `requires` precondition so files without threading primitives aren't flagged. text + json output. Companion to `qt_async_await_lint` (async-pattern regexes) and `qt_signal_slot_trace` (connection graph).
-- **`qt_sanitizer_run`** — build a Qt project with `-fsanitize=address` (default) / `address,undefined` / `undefined` / `thread`, then run it briefly to capture sanitizer diagnostics. Workflow: copy project to `sanitizer-<type>-<buildtype>/`, patch `.pro` with `QMAKE_CXXFLAGS += <flag>` + `QMAKE_LFLAGS += <flag>` (idempotent), `qmake` + `mingw32-make`, spawn `.exe` for `run_seconds` with `ASAN_OPTIONS=halt_on_error=1` / `UBSAN_OPTIONS=print_stacktrace=1` / `TSAN_OPTIONS=second_deadlock_stack=1`, parse output for known sanitizer error markers (`==ERROR: AddressSanitizer`, `runtime error:`, `WARNING: ThreadSanitizer`, `SUMMARY: AddressSanitizer`), report `PASS` / `FAIL`, always `distclean` unless `keep_sanitizer_build=True`. MinGW-compatible (ASan + UBSan combo works on both MinGW and MSVC; `-fsanitize=thread` requires pthreads and may not link cleanly on Windows). Companion to `qt_smoke_test` (smoke = does it run) + `qt_perf_budget` (perf = does it run fast) — this checks *does it crash on common memory / UB errors*.
+- **`qt_widget_introspect`** — 借自 `0xCarbon/qt-mcp` 的 runtime widget 树三件套（`qt_snapshot` / `qt_find_widget` / `qt_widget_details`）。通过 pywinauto + UI Automation 检查**运行中**的 Qt 应用，三种 action 合一个工具：`snapshot`（完整 widget 树作嵌套 JSON，可配 `max_depth`）、`find`（按 `name_contains` / `type_contains` / `text_contains` 搜索，AND 组合，返回扁平匹配列表）、`details`（按 `auto_id` —— Qt `setObjectName` 暴露为 UI Automation 的 `AutomationId` —— 拿 widget 的完整属性）。可 attach 到运行中的 `process_id` 或自动启动 `executable`（后台，总 kill）。json 输出。配 `qt_ui_action`（**驱动** action）—— 本工具**观察**状态。
+- **`qt_layout_check`** — `.ui` 文件（用 ElementTree 解析 XML）的静态布局 anti-pattern 检查。借自 `0xCarbon/qt-mcp` 的 runtime `qt_layout_check`，本工具静态跑（不启动 app）。5 条规则：`widget_no_layout_parent`（warning）、`deep_nesting`（> 5 层，warning）、`duplicated_object_name`（破坏 `findChild` / UI Automation，warning）、`layout_no_stretch`（info）、`fixed_size_in_expanding_layout`（info）。Severity 过滤；text + json 输出。
+- **`qt_cppcheck`** — 在目录或单文件上跑 `cppcheck --json --library=qt`。防御性 JSON 解析器（cppcheck 有时按文件发一个对象，有时发单个含 `diagnostics` 数组的对象）。按 severity 聚合计数（`error` / `warning` / `style` / `performance` / `portability` / `information`）成 CI 友好报告。通过 `QT_CPPCHECK_EXE` 环境变量 → `PATH` 自动找 `cppcheck`；显式 `cppcheck_exe` 覆盖两者。Severity 过滤。text + json 输出。补 `qt_clazy_check`（纯正则，零依赖）和 `qt_lint`（cpplint + qmllint + clang-tidy）—— `qt_cppcheck` 调真 `cppcheck` 二进制做更深分析。
+- **`qt_thread_affinity_check`** — 静态分析 QObject signal/slot 跨线程错误，`qt_async_await_lint` 抓不到。4 条规则：`direct_connection_cross_thread`（同文件里 Qt::DirectConnection + `moveToThread()` —— warning）、`emit_without_queued_connection`（emit + `moveToThread()` —— info）、`qthread_run_without_exec`（QThread 子类 `run()` 里没 `exec()` —— warning）、`qobject_constructed_in_worker_thread`（`QThread::run()` / `QRunnable::run()` 里 `new QObject()` —— info）。每条规则有 `requires` 前置条件，所以没用 threading 原语的文件不会被误标。text + json 输出。配 `qt_async_await_lint`（async-pattern 正则）和 `qt_signal_slot_trace`（连接图）。
+- **`qt_sanitizer_run`** — 用 `-fsanitize=address`（默认） / `address,undefined` / `undefined` / `thread` 构建 Qt 项目，然后跑一下抓 sanitizer 诊断。流程：把项目拷到 `sanitizer-<type>-<buildtype>/`，patch `.pro` 加 `QMAKE_CXXFLAGS += <flag>` + `QMAKE_LFLAGS += <flag>`（幂等），`qmake` + `mingw32-make`，用 `ASAN_OPTIONS=halt_on_error=1` / `UBSAN_OPTIONS=print_stacktrace=1` / `TSAN_OPTIONS=second_deadlock_stack=1` spawn `.exe` 跑 `run_seconds`，解析输出找已知 sanitizer 错误标记（`==ERROR: AddressSanitizer`、`runtime error:`、`WARNING: ThreadSanitizer`、`SUMMARY: AddressSanitizer`），报告 `PASS` / `FAIL`，`keep_sanitizer_build=True` 之外总 `distclean`。MinGW 兼容（ASan + UBSan 组合在 MinGW 和 MSVC 都可用；`-fsanitize=thread` 需要 pthreads，在 Windows 上可能链接不干净）。配 `qt_smoke_test`（smoke = 能不能跑）+ `qt_perf_budget`（perf = 跑得快不快）—— 本工具查**常见内存 / UB 错误会不会崩**。
 
 ## [0.3.2] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_translation_sync`** — companion to `qt_translation_validate` and `qt_translation_auto_fill`. Scans the project for `tr("...")` calls (regex-based, handles `tr("s")` and `tr("s", "ctx")` forms), parses the target `.ts` XML, and diffs them: reports which source strings are missing from the `.ts` and which `.ts` entries are no longer referenced in the code. With `apply=True`, appends `<message>` stubs (type="unfinished") for missing strings to the `.ts` (with a `.bak` backup) and reports the new coverage. The i18n pipeline is now complete: `validate` (coverage report) → `sync` (source ↔ .ts diff) → `auto_fill` (LLM translation).
-- **`qt_async_await_lint`** — static analysis of Qt async / concurrency anti-patterns. Seven rules: `qtconcurrent_blocking_in_main` (QtConcurrent::blockingMapped/... on the GUI thread), `qfuture_waitforfinished` (QFuture::waitForFinished blocks the calling thread — use QFutureWatcher + finished signal instead), `qthreadpool_direct_start` (QThreadPool::start(new QThread) leaks), `qfuturewatcher_unwired` (QFutureWatcher declared but no setFuture() / connect in sight), `qthread_no_eventloop` (QThread subclass without exec() in run()), `movetothread_after_connect` (moveToThread() called after a connect() — locks the connection to the old thread), `qrunnable_no_autodelete` (QRunnable without explicit autoDelete policy). Filters by min_severity (info/warning); text + json output.
-- **`qt_hotreload_check`** — companion to `qt_property_browser`. Validates Q_PROPERTY declarations: `missing_notify` (READ with no NOTIFY → QML/bindings can't react to changes, warning), `missing_read` (no READ accessor → error), `constant_with_write` (CONSTANT + WRITE is contradictory → error), `member_with_read` (both MEMBER and READ → info, pick one), `notify_signal_not_found` (NOTIFY references a signal not in the `signals:` block → error), `member_variable_not_found` (MEMBER references an undeclared class member → error), `write_setter_not_found` (WRITE references a setter that's not declared → error). text + json output.
-- **`qt_perf_budget`** — CI-friendly startup-time gate. Launch the `.exe`, measure the time from spawn to first non-zero CPU activity (proxy for event-loop entry) and to first top-level window appearance (via `pywinauto.find_windows(process=pid)`), compare against `budget_ms` (default 2000ms), report `PASS` / `FAIL`, and always kill the launched process before returning. Companion to `qt_smoke_test` (which checks "does it run"); this checks "does it run FAST enough".
-- **`qt_format_check`** — companion to `qt_format` (which *fixes* formatting). Audits a directory of `.h` / `.cpp` / `.cc` / `.cxx` files via `clang-format --output-replacements-xml`, aggregates per-file pass/fail into a single CI-friendly report (total / clean / dirty / error counts + total replacements), and (with `init_clang_format=True`) generates a template `.clang-format` from one of six built-in styles (llvm / google / chromium / mozilla / webkit / qt — the last is derived from Qt 6's `qt.git/.clang-format`). Idempotent: never overwrites an existing `.clang-format`. text + json output.
+- **`qt_translation_sync`** — 配 `qt_translation_validate` 和 `qt_translation_auto_fill`。扫项目的 `tr("...")` 调用（基于 regex，处理 `tr("s")` 和 `tr("s", "ctx")` 两种形式），解析目标 `.ts` XML，做 diff：报告哪些源字符串在 `.ts` 缺失、哪些 `.ts` 条目在代码里不再被引用。`apply=True` 时给缺失的字符串追加 `<message>` stub（type="unfinished"）到 `.ts`（带 `.bak` 备份）并报告新覆盖率。i18n 流现已完成闭环：`validate`（覆盖率报告）→ `sync`（源 ↔ .ts diff）→ `auto_fill`（LLM 翻译）。
+- **`qt_async_await_lint`** — Qt 异步/并发 anti-pattern 静态分析。7 条规则：`qtconcurrent_blocking_in_main`（GUI 线程上 QtConcurrent::blockingMapped/...）、`qfuture_waitforfinished`（QFuture::waitForFinished 阻塞调用线程 —— 改用 QFutureWatcher + finished 信号）、`qthreadpool_direct_start`（QThreadPool::start(new QThread) 泄漏）、`qfuturewatcher_unwired`（声明了 QFutureWatcher 但没看到 setFuture() / connect）、`qthread_no_eventloop`（QThread 子类 `run()` 里没 exec()）、`movetothread_after_connect`（connect() 之后调 moveToThread() —— 把连接锁到旧线程）、`qrunnable_no_autodelete`（QRunnable 没显式 autoDelete 策略）。按 `min_severity`（info/warning）过滤；text + json 输出。
+- **`qt_hotreload_check`** — 配 `qt_property_browser`。校验 Q_PROPERTY 声明：`missing_notify`（READ 没 NOTIFY → QML / 绑定无法响应变更，warning）、`missing_read`（无 READ accessor → error）、`constant_with_write`（CONSTANT + WRITE 矛盾 → error）、`member_with_read`（MEMBER 和 READ 都有 → info，二选一）、`notify_signal_not_found`（NOTIFY 引用的 signal 不在 `signals:` 块里 → error）、`member_variable_not_found`（MEMBER 引用的成员未声明 → error）、`write_setter_not_found`（WRITE 引用的 setter 没声明 → error）。text + json 输出。
+- **`qt_perf_budget`** — CI 友好启动时间 gate。启动 `.exe`，测从 spawn 到第一次非零 CPU 活动（事件循环进入的代理）和到第一个顶层窗口出现（通过 `pywinauto.find_windows(process=pid)`）的时间，与 `budget_ms`（默认 2000ms）对比，报告 `PASS` / `FAIL`，返回前总 kill 启动的进程。配 `qt_smoke_test`（查"能不能跑"）；本工具查"跑得**够不够快**"。
+- **`qt_format_check`** — 配 `qt_format`（**修**格式）。通过 `clang-format --output-replacements-xml` 审计 `.h` / `.cpp` / `.cc` / `.cxx` 目录，把逐文件 pass/fail 聚合成单条 CI 友好报告（total / clean / dirty / error 计数 + 总替换数），加 `init_clang_format=True` 从六种内置风格（llvm / google / chromium / mozilla / webkit / qt —— 最后一个派生自 Qt 6 的 `qt.git/.clang-format`）之一生成模板 `.clang-format`。幂等：永不覆盖已有 `.clang-format`。text + json 输出。
 
-### Bug fixes
+### Bug 修复
 
-- **`qt_property_browser`** — the v0.2.8 `qt_property_browser` defined a module-level `_QPROP_RE` regex (with named groups `type` / `name` / `rest`); v0.3.2's `qt_hotreload_check` re-declared `_QPROP_RE` at module level with a *different* shape (no `rest` group, no template support), silently clobbering the v0.2.8 regex and breaking 4 e2e_v13 tests for `qt_property_browser`. Renamed the v0.3.2 regex to `_HR_QPROP_RE` (and the companion patterns to `_HR_QPROP_TAKE_VALUE` / `_HR_QPROP_BOOL_KW`) to restore `qt_property_browser` behaviour. (E2E caught the regression in the same sprint.)
-- **`qt_format_check`** — initial implementation listed `.tmp` in the skip-dir set, which excluded every `.cpp` under `SANDBOX_TMP` (lives under `E:\Download_tools\QT\.tmp\…`). The same v0.2.5-era bug that affected `qt_cmake` and `qt_grep` / `qt_qml_lint`. Removed `.tmp` from the skip list (intentionally — `SANDBOX_TMP` is a sandboxed test dir, not a build artefact).
-- **`qt_hotreload_check`** — `signal_re` initially used `r"signals\s*:\s*(?:public\s+)?(?:protected\s+)?(?:[\w:]+\s+)?(\w+)\s*\("` and `re.findall` — this only matched the *first* signal after a `signals:` block (the `findall` advanced past the first match and missed the rest). Replaced with a body-extraction approach: match the full `signals: … ` block up to the next access-specifier or `}` and harvest every `name(` inside. Found by e2e_v18 test 12 (`does NOT flag valueChanged`).
-- **`qt_hotreload_check`** — initial `QPROP_RE` parsed `Q_PROPERTY(double constantPi READ constantPi CONSTANT)` as type=`double constantPi READ constantPi` name=`CONSTANT` (the `type` group greedily ate the READ clause). Replaced with a `prefix / attrs` split on the first keyword boundary: prefix becomes `"<type> <name>"` (split on last whitespace), then attrs parses the trailing clauses. Found by manual smoke test.
-- **`qt_hotreload_check`** — method-collection regex `r"…\s*;"` only matched `;`-ended declarations, missing inline `{}` definitions like `void setValue(int v) {}` (very common in Qt header). Loosened to `(?:\s*;|\s*\{)`. Found by e2e_v18 test 15.
+- **`qt_property_browser`** —— v0.2.8 `qt_property_browser` 在模块级定义了 `_QPROP_RE` 正则（带命名组 `type` / `name` / `rest`）；v0.3.2 `qt_hotreload_check` 在模块级重声明 `_QPROP_RE` 为**不同**形状（无 `rest` 组、无模板支持），静默覆盖了 v0.2.8 的正则，打破 4 个 e2e_v13 测试对 `qt_property_browser` 的断言。把 v0.3.2 的正则重命名为 `_HR_QPROP_RE`（同伴 pattern 也改成 `_HR_QPROP_TAKE_VALUE` / `_HR_QPROP_BOOL_KW`）以恢复 `qt_property_browser` 行为。（E2E 在同 sprint 内抓到回归。）
+- **`qt_format_check`** —— 初版在 skip-dir 集里列了 `.tmp`，把所有 `SANDBOX_TMP` 下的 `.cpp` 排除掉（`SANDBOX_TMP` 在 `E:\Download_tools\QT\.tmp\…` 下）。这是 v0.2.5 时代影响 `qt_cmake` 和 `qt_grep` / `qt_qml_lint` 的同一 bug。从 skip 列表去掉 `.tmp`（故意 —— `SANDBOX_TMP` 是 sandbox 测试目录，不是 build artifact）。
+- **`qt_hotreload_check`** —— `signal_re` 初版用 `r"signals\s*:\s*(?:public\s+)?(?:protected\s+)?(?:[\w:]+\s+)?(\w+)\s*\("` 加 `re.findall` —— 这只匹配 `signals:` 块后的**第一个** signal（`findall` 跳到第一个匹配后错过其余）。改成 body-extraction 思路：匹配完整的 `signals: …` 块到下一个 access-specifier 或 `}`，再收里面的每个 `name(`。被 e2e_v18 test 12 抓出（`does NOT flag valueChanged`）。
+- **`qt_hotreload_check`** —— 初版 `QPROP_RE` 把 `Q_PROPERTY(double constantPi READ constantPi CONSTANT)` 解析成 type=`double constantPi READ constantPi` name=`CONSTANT`（`type` 组贪心吃了 READ 子句）。改成在第一个 keyword 边界做 `prefix / attrs` 切分：prefix 变 `"<type> <name>"`（按最后空白切分），然后 attrs 解析尾随子句。手动 smoke test 抓出。
+- **`qt_hotreload_check`** —— 方法收集正则 `r"…\s*;"` 只匹配 `;` 结尾的声明，漏了 `void setValue(int v) {}` 这种 inline `{}` 定义（Qt 头里很常见）。放宽到 `(?:\s*;|\s*\{)`。被 e2e_v18 test 15 抓出。
 
 ## [0.3.1] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_documentation_auto_fill`** — companion to `qt_documentation_lint`. Find every undocumented public function in `.h` / `.cpp` / `.qml`, call an LLM (Anthropic Claude 3.5 Sonnet by default; OpenAI GPT-4o-mini alternative) to generate doxygen `@brief` / `@param` / `@return` blocks, and emit a unified-diff preview. Default `apply=False` shows the diff; `apply=True` writes changes back (with a `.bak` copy). Requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` env var. Batches all missing functions in one file into a single LLM call to minimise token cost.
-- **`qt_translation_auto_fill`** — companion to `qt_translation_validate`. Parse `.ts` XML, find every `<message>` with `type="unfinished"` translation, call the LLM to translate the `<source>` text into the file's declared language (e.g. `zh_CN`, `en_US`, `fr`), batch up to `batch_size` messages per call (default 20). Default `apply=False` shows diff; `apply=True` writes `.ts` back. Preserves XML structure, escapes special chars in translations, supports `target_language` filter to process only one language across multiple `.ts` files.
-- **`qt_signal_lint_fix`** — companion to `qt_signal_slot_trace`. Four fix rules, each individually toggle-able: `unique_connection` (OR-adds `Qt::UniqueConnection` to existing 5-arg connect calls that already have `Qt::AutoConnection` / `DirectConnection` / `QueuedConnection`), `queued_connection` (adds `Qt::QueuedConnection` when a `// @thread:main` or `// @thread: ui` marker is found within 1500 chars of the connect call), `functor_to_pointer` (Qt 5 `SIGNAL(class::sig())` / `SLOT(class::slot())` macros → Qt 6 PMF `&class::sig` / `&class::slot` syntax), `orphan_slot_stub` (appends empty implementations for declared slots that are never connected, with a `qWarning` to surface the missing connection). Default `apply=False` shows diff; `apply=True` writes back with optional `.bak`.
+- **`qt_documentation_auto_fill`** — 配 `qt_documentation_lint`。找 `.h` / `.cpp` / `.qml` 里每个未文档化的 public 函数，调 LLM（默认 Anthropic Claude 3.5 Sonnet；备选 OpenAI GPT-4o-mini）生成 doxygen `@brief` / `@param` / `@return` 块，输出 unified-diff 预览。默认 `apply=False` 显示 diff；`apply=True` 写回（带 `.bak` 副本）。需要 `ANTHROPIC_API_KEY` 或 `OPENAI_API_KEY` 环境变量。把一个文件里的所有未文档化函数批到一次 LLM 调用里以省 token。
+- **`qt_translation_auto_fill`** — 配 `qt_translation_validate`。解析 `.ts` XML，找每个 `<message>` 带 `type="unfinished"` 的翻译，调 LLM 把 `<source>` 文本翻译到文件声明的语言（如 `zh_CN`、`en_US`、`fr`），每调用批 `batch_size` 条（默认 20）。默认 `apply=False` 显示 diff；`apply=True` 写回 `.ts`。保留 XML 结构、转义翻译中的特殊字符、支持 `target_language` 过滤以在多个 `.ts` 文件里只处理一种语言。
+- **`qt_signal_lint_fix`** — 配 `qt_signal_slot_trace`。4 条 fix 规则，每条可单独 toggle：`unique_connection`（对已经有 `Qt::AutoConnection` / `DirectConnection` / `QueuedConnection` 的 5 参数 connect 调用 OR 加 `Qt::UniqueConnection`）、`queued_connection`（在 connect 调用 1500 字符内找到 `// @thread:main` 或 `// @thread: ui` 标记时加 `Qt::QueuedConnection`）、`functor_to_pointer`（Qt 5 `SIGNAL(class::sig())` / `SLOT(class::slot())` 宏 → Qt 6 PMF `&class::sig` / `&class::slot` 语法）、`orphan_slot_stub`（给已声明但从未被 connect 的 slot 追加空实现，带 `qWarning` 暴露缺失的连接）。默认 `apply=False` 显示 diff；`apply=True` 写回，可选 `.bak`。
 
-### Improved
+### 改进
 
-- **LLM infrastructure helper** — shared `_llm_check_config()` + `_llm_call()` (urllib-based, no extra dependency). `_llm_call` returns a dict `{ok, text, error}` rather than raising; tools check `ok` and surface `Error:` strings to the user. `_json_footer` trailers include the provider + model used.
+- **LLM 基础设施 helper** —— 共享 `_llm_check_config()` + `_llm_call()`（基于 urllib，无额外依赖）。`_llm_call` 返回 dict `{ok, text, error}` 而非抛异常；工具检查 `ok` 并把 `Error:` 字符串返给用户。`_json_footer` 段包含使用的 provider + model。
 
-### Bug fixes
+### Bug 修复
 
-- **`qt_documentation_auto_fill`** — initial implementation used `del server._llm_call` in the test `finally` block to restore a mock, which permanently deleted the server module's real `_llm_call` function and broke all subsequent tests. Replaced with a `patch_llm_call()` helper that saves the original function reference and restores it on cleanup. Same pattern applied to `qt_translation_auto_fill` tests.
-- **`qt_signal_lint_fix`** — `re.subn()` count is *match count*, not *replace count*. When the regex matched but the callback returned the original text (no fix applicable), `n` was still > 0, falsely reporting a fix. Fixed to compare `new_modified != modified` before appending to `file_fixes`. Same fix applied to `unique_connection` and `functor_to_pointer` rules.
-- **`qt_signal_lint_fix`** — `unique_connection` regex `r"(connect\s*\([^;]+?),\s*(Qt::AutoConnection|Qt::DirectConnection|Qt::QueuedConnection|)\s*\)"` incorrectly matched 4-arg `connect(...)` calls (where the type is unspecified, defaulting to `Qt::AutoConnection`). Fixed to require an explicit type argument before OR-ing `Qt::UniqueConnection` — adding it to a 4-arg connect would silently change semantics from "default-type" to "default-type | unique".
-- **`qt_signal_lint_fix`** — `queued_connection` regex `r"connect\s*\(\s*(\w+)\s*,\s*SIGNAL\s*\([^)]+\)\s*,..."` failed to match `SIGNAL(progressUpdated())` because `[^)]+` cannot cross the inner `)` in `progressUpdated()`. Fixed to `.*?` (non-greedy any-char) to handle Qt signal/slot name patterns with their own parentheses.
+- **`qt_documentation_auto_fill`** —— 初版在测试 `finally` 块用 `del server._llm_call` 还原 mock，永久删掉 server 模块的真实 `_llm_call` 函数，让后续所有测试都坏。改成 `patch_llm_call()` helper，保存原函数引用并在清理时还原。`qt_translation_auto_fill` 测试同模式。
+- **`qt_signal_lint_fix`** —— `re.subn()` 的 `n` 是**匹配数**而非**替换数**。当 regex 匹配但 callback 返回原文本（无可用 fix）时，`n` 仍 > 0，误报 fix。改成在追加 `file_fixes` 前先比 `new_modified != modified`。`unique_connection` 和 `functor_to_pointer` 同修。
+- **`qt_signal_lint_fix`** —— `unique_connection` 正则 `r"(connect\s*\([^;]+?),\s*(Qt::AutoConnection|Qt::DirectConnection|Qt::QueuedConnection|)\s*\)"` 错匹配 4 参数 `connect(...)` 调用（那里类型未指定，默认 `Qt::AutoConnection`）。改成 OR 加 `Qt::UniqueConnection` 之前要求显式类型参数 —— 给 4 参数 connect 加这个会静默把语义从"默认类型"改成"默认类型 | unique"。
+- **`qt_signal_lint_fix`** —— `queued_connection` 正则 `r"connect\s*\(\s*(\w+)\s*,\s*SIGNAL\s*\([^)]+\)\s*,..."` 无法匹配 `SIGNAL(progressUpdated())` 因为 `[^)]+` 跨不过 `progressUpdated()` 里的内层 `)`。改成 `.*?`（非贪心任意字符）以处理 Qt signal/slot 名带自己括号的情况。
 
-### Verified
+### 已验证
 
-- 22 e2e suites pass: 6 light + 273 full = **279 pytest tests** (`pytest -m light` < 5s, `pytest -m full` ~60s).
-- **85 / 85 tools** have e2e coverage (82 v0.3.0 + 3 v0.3.1).
-- 85 / 85 tools have complete Args / Returns / Raises docstrings.
-- 85 / 85 tools use `_json_footer` for machine-readable trailers (off by default).
-- All e2e tests bypass MCP stdio caching by importing `server` directly — verified via `pytest -m full`.
-- server.py grew from 14110 → **14806 lines** (+696, +4.9%); 3 new tools averaged ~230 lines each (Pydantic Input + impl + docstring + JSON footer). Tests grew from 254 → 279 (+25; +9.8%).
+- 22 个 e2e 套件过：6 light + 273 full = **279 个 pytest 测试**（`pytest -m light` < 5s，`pytest -m full` ~60s）。
+- **85 / 85 工具**有 e2e 覆盖（82 v0.3.0 + 3 v0.3.1）。
+- 85 / 85 工具有完整 Args / Returns / Raises docstring。
+- 85 / 85 工具用 `_json_footer` 输出机器可读段（默认关）。
+- 所有 e2e 测试通过直接 import `server` 绕过 MCP stdio 缓存 —— 通过 `pytest -m full` 验证。
+- server.py 从 14110 → **14806 行**（+696，+4.9%）；3 个新工具平均 ~230 行每个（Pydantic Input + 实现 + docstring + JSON 段）。测试从 254 → 279（+25；+9.8%）。
 
 ## [0.3.0] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_build_cache`** — detect ccache / sccache on PATH and report which compiler-cache backend is available, read hit/miss stats from the cache directory, and (optionally) inject `QMAKE_CXX = ccache g++` (or sccache equivalent) at the top of the project's `.pro` so every subsequent `qt_build` invocation routes compiles through the cache. Also writes a sidecar `.qt_ccache_env` with the `CCACHE_DIR` / `SCCACHE_DIR` hint. `report_only=True` skips the patch. Typical use: cut incremental rebuild time from 30-60 s to 2-6 s on a 200-400-file board-game project (5-10× speedup).
-- **`qt_steamworks_init`** — generate a drop-in Steamworks SDK integration for a Qt project: `steamworks_integration.h/.cpp` wrapping `SteamAPI_Init` / `SteamAPI_Shutdown` / `SteamAPI_RunCallbacks` with a 10 Hz `QTimer` and a `steamCallbacksDispatched` signal; `steam_achievements.h/.cpp` with `grant(apiName)` / `isUnlocked(apiName)` / `storeStats()` calling `SteamUserStats()->SetAchievement`; `steam_appid.txt` next to the .pro so dev mode works without launching through the Steam client; and `STEAMWORKS.md` with a step-by-step checklist (download SDK, add headers to .pro, call `init()`, configure achievements on the partner site). `sdk_path` option emits a `LIBS += -L... -lsteam_api` snippet.
-- **`qt_itch_butler`** — generate `.itch.toml` (channel manifest for `butler push`) and per-channel push scripts (`push_windows.bat`, `push_macos.sh`, `push_linux.sh`, `push_html5.bat`, `push_android.bat`) for distributing a Qt game on itch.io. Also writes `BUTLER_README.md` with the first-time setup (install butler, `butler login`, create project page on itch.io dashboard). `dry_run=True` (default) echoes the push command instead of invoking butler, so it's safe to run on a fresh project without needing the butler binary on PATH.
-- **`qt_documentation_lint`** — static analysis of doxygen comment completeness on `.h` / `.cpp` / `.qml` files. For every public function found, checks for a preceding doxygen block, `@brief` summary (or first `///` line) of at least `min_brief_chars` characters, `@param` tags for every declared parameter, and `@return` tag for non-void returns. Reports per-file coverage fraction. Supports `text` (human-readable) or `json` (machine-readable) output. `fail_threshold=0.99` makes it CI-friendly — the tool returns `Error:` if coverage drops below the threshold. Companion to `qt_docs_gen` (which *generates* the Doxyfile + runs doxygen); `qt_documentation_lint` *checks* that the source is documented to begin with.
+- **`qt_build_cache`** — 检测 PATH 上的 ccache / sccache，从缓存目录读 hit/miss 统计，（可选）注入 `QMAKE_CXX = ccache g++`（或 sccache 等价物）到项目 `.pro` 顶部，让后续每次 `qt_build` 调编译都走缓存。还写带 `CCACHE_DIR` / `SCCACHE_DIR` 提示的旁挂 `.qt_ccache_env`。`report_only=True` 跳过 patch。典型用途：在 200-400 文件的棋牌项目上把增量重编译时间从 30-60 s 砍到 2-6 s（5-10× 加速）。
+- **`qt_steamworks_init`** — 为 Qt 项目生成即插即用 Steamworks SDK 集成：`steamworks_integration.h/.cpp` 包 `SteamAPI_Init` / `SteamAPI_Shutdown` / `SteamAPI_RunCallbacks`，带 10 Hz `QTimer` 和 `steamCallbacksDispatched` 信号；`steam_achievements.h/.cpp` 带 `grant(apiName)` / `isUnlocked(apiName)` / `storeStats()`，调 `SteamUserStats()->SetAchievement`；`steam_appid.txt` 放 .pro 旁边让 dev 模式不用通过 Steam client 启动也能工作；`STEAMWORKS.md` 带分步 checklist（下载 SDK、把头加到 .pro、调 `init()`、在合作方网站配成就）。`sdk_path` 选项输出 `LIBS += -L... -lsteam_api` 片段。
+- **`qt_itch_butler`** — 为 Qt 游戏在 itch.io 上分发生成 `.itch.toml`（`butler push` 的 channel manifest）和每 channel 的 push 脚本（`push_windows.bat`、`push_macos.sh`、`push_linux.sh`、`push_html5.bat`、`push_android.bat`）。还写 `BUTLER_README.md`，含首次设置（装 butler、`butler login`、在 itch.io 仪表板建项目页）。`dry_run=True`（默认）回显 push 命令而不真调 butler，所以在没有 butler 二进制在 PATH 的全新项目上跑也安全。
+- **`qt_documentation_lint`** — 对 `.h` / `.cpp` / `.qml` 做 doxygen 注释完整性的静态分析。对找到的每个 public 函数，检查：前一个 doxygen 块、`@brief` 摘要（或第一条 `///` 行）至少 `min_brief_chars` 字符、每个声明参数的 `@param` 标签、非 void 返回值的 `@return` 标签。报告逐文件覆盖率。支持 `text`（人类可读）或 `json`（机器可读）输出。`fail_threshold=0.99` 让它 CI 友好 —— 覆盖率降到 threshold 以下时工具返回 `Error:`。配 `qt_docs_gen`（**生成** Doxyfile + 跑 doxygen）；`qt_documentation_lint` 检查源码**本身**已文档化。
 
-### Improved
+### 改进
 
-- **`qt_cheatsheet` catalog** — needs to be updated to include the 4 v0.3.0 tools (deferred to next minor; same pattern as v0.2.7 / v0.2.9 backfills).
+- **`qt_cheatsheet` 目录** —— 需要更新加 4 个 v0.3.0 工具（推迟到下个 minor；同 v0.2.7 / v0.2.9 补录模式）。
 
-### Verified
+### 已验证
 
-- 20 e2e suites pass: 6 light + 254 full = **254 pytest tests** (`pytest -m light` < 5s, `pytest -m full` ~62s).
-- **82 / 82 tools** have e2e coverage (78 v0.2.9 + 4 v0.3.0).
-- 82 / 82 tools have complete Args / Returns / Raises docstrings.
-- 82 / 82 tools use `_json_footer` for machine-readable trailers (off by default).
-- All e2e tests bypass MCP stdio caching by importing `server` directly — verified via `pytest -m full`.
-- server.py grew from 13273 → **14110 lines** (+837, +6.3%); 4 new tools averaged ~210 lines each (Pydantic Input + impl + docstring + JSON footer). Tests grew from 233 → 254 (+21).
+- 20 个 e2e 套件过：6 light + 254 full = **254 个 pytest 测试**（`pytest -m light` < 5s，`pytest -m full` ~62s）。
+- **82 / 82 工具**有 e2e 覆盖（78 v0.2.9 + 4 v0.3.0）。
+- 82 / 82 工具有完整 Args / Returns / Raises docstring。
+- 82 / 82 工具用 `_json_footer` 输出机器可读段（默认关）。
+- 所有 e2e 测试通过直接 import `server` 绕过 MCP stdio 缓存 —— 通过 `pytest -m full` 验证。
+- server.py 从 13273 → **14110 行**（+837，+6.3%）；4 个新工具平均 ~210 行每个。测试从 233 → 254（+21）。
 
 ## [0.2.9] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_env_diff`** — compare two Qt SDK installations side-by-side. Reports `qmake -v` version, module count (from `<root>/include/Qt*` dirs), lib file count (`.a` / `.dll` / `.lib`), and lists modules that exist only in A or only in B. The classic MinGW32 vs MinGW64 mismatch diagnostic.
-- **`qt_dll_search_path`** — analyze the DLL search path for a Qt executable. Uses `objdump -p` to extract the full DLL import list, then walks the standard Windows search order (`.exe` dir → user-supplied dirs → `QT_BIN_DIR` → `QT_32_BIN_DIR` → `PATH`) and reports which DLLs are present and which are missing. Companion to `qt_run` startup-failure diagnostics — when an exe crashes 0.4s after launch, 90% of the time it's a missing or wrong-bitness `Qt5Core.dll`.
-- **`qt_audio_convert`** — ffmpeg wrapper for batch audio conversion. Supports `mp3` / `opus` / `wav` / `ogg` / `flac` / `m4a` / `aac` output, configurable bitrate (ignored for lossless). Typical use: prepare card-flip / shuffle / chip-drop sound effects for a board game. ffmpeg path is overridable via `QT_MCP_FFMPEG` (default `E:\Download_tools\ffmpeg-8.1.1-essentials_build\bin\ffmpeg.exe`).
-- **`qt_qss_inspect`** — parse a Qt Style Sheet (`.qss`) and report its structure: selector count, property count, duplicate selectors (e.g. two `QPushButton { ... }` blocks), duplicate properties within a selector, `!important` usage, unique color values, font sizes. Useful for auditing themes generated by `qt_theme_gen` or hand-written stylesheets that have grown unwieldy.
-- **`qt_svg_to_png`** — convert `.svg` files to `.png` at multiple widths. Tries `cairosvg` first, then ImageMagick (`magick` / `convert`). Reports which backend was used. Typical use: prepare card art / icon sets / UI mockups from vector sources into PNGs that Qt can bundle in a `.qrc` resource file.
-- **`qt_qml_property_linter`** — static analysis of QML files for property issues. Detects: unused `property` declarations, shadowed ids (same `id` defined twice in the same file), type mismatches (string literal assigned to a numeric property). Companion to `qt_qml_lint` (which checks syntax via qmllint) — catches property-level issues that qmllint misses when types aren't declared or ids are reused.
-- **`qt_accessibility_check`** — scan Qt C++ source files for a11y issues. Detects: `Q_OBJECT` classes missing `Q_DISABLE_COPY`; interactive widgets (`QPushButton`, `QLabel`, `QLineEdit`, ...) missing `setAccessibleName`; widgets missing `setObjectName`; counts `setTabOrder` / `setAccessibleDescription` usage. Useful for screen-reader and keyboard-navigation QA before release.
-- **`qt_pro_project_graph`** — walk a `.pro` file's `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES` lists, scan each file's content for `#include "..."` directives, and emit a Graphviz DOT dependency graph. Colors clusters by file type (sources = blue, headers = green, forms = orange, resources = pink). Detects include cycles via DFS. Optional `output_dot` writes to file for `dot -Tpng foo.dot -o foo.png`.
+- **`qt_env_diff`** — 并排比较两个 Qt SDK 安装。报告 `qmake -v` 版本、模块数（从 `<root>/include/Qt*` 目录）、lib 文件数（`.a` / `.dll` / `.lib`），列出仅在 A 或仅在 B 存在的模块。经典的 MinGW32 vs MinGW64 不匹配诊断。
+- **`qt_dll_search_path`** — 分析 Qt 可执行文件的 DLL 搜索路径。用 `objdump -p` 提完整 DLL import 列表，然后按标准 Windows 搜索顺序（`.exe` 目录 → 用户提供的目录 → `QT_BIN_DIR` → `QT_32_BIN_DIR` → `PATH`）遍历，报告哪些 DLL 在、哪些缺失。配 `qt_run` 启动失败诊断 —— exe 启动后 0.4 秒崩了，90% 是缺或错 bitness 的 `Qt5Core.dll`。
+- **`qt_audio_convert`** — ffmpeg 包装做批量音频转换。支持 `mp3` / `opus` / `wav` / `ogg` / `flac` / `m4a` / `aac` 输出，可配比特率（无损忽略）。典型用途：为棋牌游戏准备翻牌 / 洗牌 / 筹码落桌音效。ffmpeg 路径可通过 `QT_MCP_FFMPEG` 覆盖（默认 `E:\Download_tools\ffmpeg-8.1.1-essentials_build\bin\ffmpeg.exe`）。
+- **`qt_qss_inspect`** — 解析 Qt Style Sheet（`.qss`）并报告其结构：选择器数、属性数、重复选择器（如两个 `QPushButton { ... }` 块）、选择器内重复属性、`!important` 用法、唯一颜色值、字号。审计 `qt_theme_gen` 生成的或手写的、已经长得不可读的 stylesheet 时有用。
+- **`qt_svg_to_png`** — 把 `.svg` 文件转成多宽度 `.png`。先试 cairosvg，然后 ImageMagick（`magick` / `convert`）。报告用了哪个后端。典型用途：把矢量源准备成 Qt 能打包进 `.qrc` 资源的 PNG。
+- **`qt_qml_property_linter`** — QML 文件 property 问题静态分析。检测：未用的 `property` 声明、id 遮蔽（同一文件里两次定义同一 id）、类型不匹配（字符串字面量赋给数值属性）。配 `qt_qml_lint`（用 qmllint 查语法）—— 抓 qmllint 在类型未声明或 id 重用时漏掉的 property 级问题。
+- **`qt_accessibility_check`** — 扫 Qt C++ 源文件的 a11y 问题。检测：`Q_OBJECT` 类缺 `Q_DISABLE_COPY`；交互 widget（`QPushButton`、`QLabel`、`QLineEdit` 等）缺 `setAccessibleName`；widget 缺 `setObjectName`；统计 `setTabOrder` / `setAccessibleDescription` 用法。发布前屏幕阅读器和键盘导航 QA 时有用。
+- **`qt_pro_project_graph`** — 遍历 `.pro` 的 `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES` 列表，扫每个文件的 `#include "..."` 指令，输出 Graphviz DOT 依赖图。按文件类型着色聚类（源码 = 蓝、头 = 绿、表单 = 橙、资源 = 粉）。通过 DFS 检测 include 环。可选 `output_dot` 写到文件，再 `dot -Tpng foo.dot -o foo.png`。
 
-### Improved
+### 改进
 
-- **`qt_cheatsheet` catalog** — needs to be updated to include the 8 v0.2.9 tools (deferred to next minor; same pattern as v0.2.7 backfill).
+- **`qt_cheatsheet` 目录补录** —— 需要更新加 8 个 v0.2.9 工具（推迟到下个 minor；同 v0.2.7 补录模式）。
 
-### Bug fixes
+### Bug 修复
 
-- **`qt_pro_project_graph`** — initial implementation used `e.get("values", [])` against `_pro_parse` output, but `_pro_parse` returns single `value` strings (not `values` lists), so nodes were always empty. Fixed to `e.get("value", "").split()` to tokenize properly. Caught by e2e_v14 test #22 ("includes main.cpp") which would have silently shipped an empty graph otherwise.
+- **`qt_pro_project_graph`** —— 初版对 `_pro_parse` 输出用 `e.get("values", [])`，但 `_pro_parse` 返回单 `value` 字符串（不是 `values` 列表），节点总是空。改成 `e.get("value", "").split()` 正确 tokenize。被 e2e_v14 test #22 抓出（"includes main.cpp"），否则图会静默空着发布出去。
 
-### Verified
+### 已验证
 
-- 19 e2e suites pass: 6 light + 25 new v14 full + 208 previous full = **233 pytest tests** (`pytest -m light` < 5s, `pytest -m full` ~58s).
-- **78 / 78 tools** have e2e coverage (70 v0.2.8 + 8 v0.2.9).
-- 78 / 78 tools have complete Args / Returns / Raises docstrings (audited via `grep -A 50 "@mcp.tool(name=..." server.py`).
-- 78 / 78 tools use `_json_footer` for machine-readable trailers (off by default).
-- All e2e tests bypass MCP stdio caching by importing `server` directly — verified via `pytest -m full`.
-- server.py grew from 12147 → **13273 lines** (+1126, +9.3%); 8 new tools averaged ~140 lines each (Pydantic Input + impl + docstring + JSON footer).
+- 19 个 e2e 套件过：6 light + 25 个新 v14 full + 208 个前版 full = **233 个 pytest 测试**（`pytest -m light` < 5s，`pytest -m full` ~58s）。
+- **78 / 78 工具**有 e2e 覆盖（70 v0.2.8 + 8 v0.2.9）。
+- 78 / 78 工具有完整 Args / Returns / Raises docstring（通过 `grep -A 50 "@mcp.tool(name=..." server.py` 审计）。
+- 78 / 78 工具用 `_json_footer` 输出机器可读段（默认关）。
+- 所有 e2e 测试通过直接 import `server` 绕过 MCP stdio 缓存 —— 通过 `pytest -m full` 验证。
+- server.py 从 12147 → **13273 行**（+1126，+9.3%）；8 个新工具平均 ~140 行每个。
 
 ## [0.2.8] — 2026-07-09
 
-### Added
+### 新增
 
-- **`qt_git_init`** — initialize a git repository for a Qt project. Generates a Qt-specific `.gitignore` (build artifacts, moc\_\*, ui\_\*, \*.user, .tmp/, v0.2.8 .qt_mcp cache), optional README.md (inferred from .pro filename), then runs `git init` + `git add .` + `git commit`. Optional `git_user_name` / `git_user_email` set local repo config. Returns initial commit SHA.
-- **`qt_installer_gen`** — generate a Windows installer script (NSIS `.nsi` or Inno Setup `.iss`) plus a `build_installer.bat` that runs `windeployqt` then the compiler (makensis or iscc). Pass `app_name`, `app_version`, `vendor`, optional `license_file` (embedded as comment) and `qml_dir` (passed via `--qmldir`). Does NOT invoke makensis / iscc itself — the user runs the batch after installing NSIS / Inno Setup.
-- **`qt_qml_component_gen`** — generate reusable QML components for board-game UIs. 6 templates: `card` (single playing card with suit/rank), `board` (grid of clickable tiles), `player` (name/score/active widget), `hand` (overlapping row of cards), `deck` (draw/discard pile with count), `tile` (tile for mahjong/dominoes/scrabble). Each emits a self-contained `.qml` + a top-level `qmldir` for module imports. Supports `dark` / `light` themes.
-- **`qt_db_seed`** — create a SQLite database from a schema definition, optionally insert seed rows, and generate a `<db_name>_examples.py` file with CRUD helpers (`select_all_*`, `insert_*`, `delete_*`). Useful for board-game player / leaderboard / move-history persistence as an alternative to `qt_state` / `qt_save`. Schema defined as `tables=[{name, columns:[{name, type, pk, not_null, default}]}]`.
-- **`qt_high_dpi_test`** — launch a `.exe` at multiple `QT_SCALE_FACTOR` values (default `[1.0, 1.5, 2.0]`), screenshot the window for each via pywinauto (with pyautogui fallback), and (optionally) compare against baseline screenshots for pixel diff. Critical for board-game UIs that need to render correctly across DPI scales.
-- **`qt_property_browser`** — extract all `Q_PROPERTY` declarations from a Qt header file and render them as a table in markdown / html / json. Each property lists its type, READ, WRITE, NOTIFY, MEMBER, CONSTANT clauses. Useful for API documentation, demos, and meta-object auditing.
+- **`qt_git_init`** — 为 Qt 项目初始化 git 仓库。生成 Qt 专属 `.gitignore`（build 产物、moc\_\*、ui\_\*、\*.user、.tmp/、v0.2.8 的 .qt_mcp 缓存），可选 README.md（从 .pro 文件名推断），然后跑 `git init` + `git add .` + `git commit`。可选 `git_user_name` / `git_user_email` 设本地仓库配置。返回初始 commit SHA。
+- **`qt_installer_gen`** — 生成 Windows installer 脚本（NSIS `.nsi` 或 Inno Setup `.iss`）+ `build_installer.bat`，跑 `windeployqt` 然后编译器（makensis 或 iscc）。传 `app_name`、`app_version`、`vendor`、可选 `license_file`（作为注释嵌入）和 `qml_dir`（通过 `--qmldir` 传）。**不**自己调 makensis / iscc —— 用户装好 NSIS / Inno Setup 后跑这个 batch。
+- **`qt_qml_component_gen`** — 为棋牌 UI 生成可复用 QML 组件。6 个模板：`card`（单张牌带花色/点数）、`board`（可点击 tile 网格）、`player`（名字/分数/激活 widget）、`hand`（重叠的牌行）、`deck`（带计数的抽牌/弃牌堆）、`tile`（麻将/多米诺/Scrabble 的 tile）。每个输出自洽 `.qml` + 顶层 `qmldir` 用于模块导入。支持 `dark` / `light` 主题。
+- **`qt_db_seed`** — 从 schema 定义创建 SQLite 数据库，可选插入 seed 行，并生成 `<db_name>_examples.py` 带 CRUD helpers（`select_all_*`、`insert_*`、`delete_*`）。棋牌玩家 / 排行榜 / 走子历史持久化作为 `qt_state` / `qt_save` 的替代。Schema 定义为 `tables=[{name, columns:[{name, type, pk, not_null, default}]}]`。
+- **`qt_high_dpi_test`** — 在多个 `QT_SCALE_FACTOR` 值（默认 `[1.0, 1.5, 2.0]`）下启动 `.exe`，对每个通过 pywinauto（pyautogui 兜底）截窗口图，可选地与 baseline 截图做像素 diff。对棋牌 UI 跨 DPI 缩放正确渲染至关重要。
+- **`qt_property_browser`** — 从 Qt 头文件抽所有 `Q_PROPERTY` 声明并以 markdown / html / json 表形式渲染。每个 property 列其 type、READ、WRITE、NOTIFY、MEMBER、CONSTANT 子句。API 文档、演示、meta-object 审计时有用。
 
-### Improved
+### 改进
 
-- **`qt_cmake` exclusion list** — confirmed `.tmp` removed (already in v0.2.5 fix; no regression).
-- 6 new tools all use `_json_footer` (off by default) for machine-readable output.
+- **`qt_cmake` 排除列表** —— 确认 `.tmp` 已去掉（v0.2.5 修复时已处理；无回归）。
+- 6 个新工具都用 `_json_footer`（默认关）输出机器可读内容。
 
-### Verified
+### 已验证
 
-- 18 e2e suites pass: 6 light + 25 new v13 full + 177 previous full = 208 pytest tests (`pytest -m light` < 5s, `pytest -m full` ~50s).
-- 70 / 70 tools have e2e coverage (64 v0.2.7 + 6 v0.2.8).
-- 70 / 70 tools have complete Args / Returns / Raises docstrings.
-- 70 / 70 tools use `_json_footer` for machine-readable trailers (off by default).
-- All e2e tests bypass MCP stdio caching by importing `server` directly — verified via `pytest -m full`.
+- 18 个 e2e 套件过：6 light + 25 个新 v13 full + 177 个前版 full = 208 个 pytest 测试（`pytest -m light` < 5s，`pytest -m full` ~50s）。
+- 70 / 70 工具有 e2e 覆盖（64 v0.2.7 + 6 v0.2.8）。
+- 70 / 70 工具有完整 Args / Returns / Raises docstring。
+- 70 / 70 工具用 `_json_footer` 输出机器可读段（默认关）。
+- 所有 e2e 测试通过直接 import `server` 绕过 MCP stdio 缓存 —— 通过 `pytest -m full` 验证。
 
 ## [0.2.7] — 2026-07
 
-### Added
+### 新增
 
-- **`qt_model_gen`** — generate a `QAbstractListModel` or `QAbstractTableModel` subclass for board-game data (cards, players, scores). For list models: configurable `item_type` + `addItem` / `removeAt` / `clear` slots. For table models: `columns` (list of `{name, type}` dicts) + `appendRow` / `clear`. Output: drop-in `.h` / `.cpp` with `rowCount` / `data` / `roleNames` (QML-ready) / `headerData` (table only).
-- **`qt_theme_gen`** — generate a QSS (Qt Style Sheet) for a Qt Widgets app. Pass `mode` ('light' / 'dark'), `base_color`, `accent_color`, `text_color`, `border_radius`; emits a fully-styled `.qss` covering QWidget / QMainWindow / QMenuBar / QMenu / QPushButton (with hover/pressed/disabled/default states) / QLineEdit / QLabel / QListWidget / QTreeWidget / QTableWidget / QHeaderView / QProgressBar / QSlider / QCheckBox / QRadioButton / QStatusBar / QToolTip / QScrollBar.
-- **`qt_ico_create`** — bundle one or more PNGs into a multi-resolution Windows `.ico` (16, 32, 48, 64, 128, 256 default sizes). Required for high-DPI-aware app icons on Windows. Uses Pillow.
-- **`qt_screenshot_diff`** — pixel-by-pixel image diff for visual regression testing. Pass two images and a tolerance (0-255 per channel); returns diff count, ratio, and bounding box. Optional `diff_image` writes a red-overlay visualization of the differences. Uses Pillow + numpy.
-- **`qt_clazy_check`** — regex-based Qt anti-pattern checker (no clazy binary required). Detects: Q_OBJECT in `.cpp` (should be in `.h`); new QObject without explicit parent; QObject subclass missing `Q_DISABLE_COPY`; QVector (Qt 4 only, use QList in Qt 5+); old-style `SIGNAL()` / `SLOT()` connect; QObject subclass missing Q_OBJECT; implicit `char*` to QString casts. Returns per-check counts and first 20 issues.
-- **`qt_signal_slot_trace`** — static analysis of signal / slot wiring. Parses `.h` for `signals:` / `slots:` declarations and QObject subclasses, parses `.cpp` for `QObject::connect` / `connect` / old-style `SIGNAL` / `SLOT` calls. Output formats: 'text' (default), 'json' (machine readable), 'dot' (Graphviz). Reports connections, orphan signals, orphan slots. Optional `output_file` writes the result to disk.
-- **`qt_input_recorder`** — record / playback mouse + keyboard events for demos, regression tests, and bug reports. Uses `pyautogui` + `pynput`. Output: portable JSON with `events` array. Actions: 'record' (capture for N seconds), 'playback' (replay a file at given speed), 'info' (show event counts by type). Helpers live in `<SANDBOX>/.tmp/input_recorder_helpers/`.
-- **`qt_translation_validate`** — parse Qt `.ts` files and report translation coverage per language. Counts `total` / `finished` / `unfinished` / `empty` / `obsolete` per `<TS language="...">` block. Optional `min_coverage` flag to warn about low-coverage languages. Useful for i18n QA.
+- **`qt_model_gen`** — 为棋牌数据（牌、玩家、分数）生成 `QAbstractListModel` 或 `QAbstractTableModel` 子类。list 模型：可配 `item_type` + `addItem` / `removeAt` / `clear` slot。table 模型：`columns`（`{name, type}` 字典列表）+ `appendRow` / `clear`。输出：可直接用的 `.h` / `.cpp` 带 `rowCount` / `data` / `roleNames`（QML-ready） / `headerData`（仅 table）。
+- **`qt_theme_gen`** — 为 Qt Widgets 应用生成 QSS（Qt Style Sheet）。传 `mode`（'light' / 'dark'）、`base_color`、`accent_color`、`text_color`、`border_radius`；输出完整样式的 `.qss`，覆盖 QWidget / QMainWindow / QMenuBar / QMenu / QPushButton（含 hover/pressed/disabled/default 状态） / QLineEdit / QLabel / QListWidget / QTreeWidget / QTableWidget / QHeaderView / QProgressBar / QSlider / QCheckBox / QRadioButton / QStatusBar / QToolTip / QScrollBar。
+- **`qt_ico_create`** — 把一个或多个 PNG 打包成多分辨率 Windows `.ico`（16、32、48、64、128、256 默认尺寸）。Windows 高 DPI app icon 必需。用 Pillow。
+- **`qt_screenshot_diff`** — 像素级图像 diff 做视觉回归测试。传两张图和 tolerance（每通道 0-255）；返回 diff 数、比例、bbox。可选 `diff_image` 写一个红覆盖可视化差异。用 Pillow + numpy。
+- **`qt_clazy_check`** — 基于 regex 的 Qt anti-pattern 检查（不需要 clazy 二进制）。检测：`.cpp` 里出现 Q_OBJECT（应该在 .h）；新 QObject 没显式 parent；QObject 子类缺 `Q_DISABLE_COPY`；QVector（Qt 4 专用，Qt 5+ 用 QList）；老式 `SIGNAL()` / `SLOT()` connect；QObject 子类缺 Q_OBJECT；隐式 `char*` 到 QString 强转。返回每 check 计数和前 20 个问题。
+- **`qt_signal_slot_trace`** — 信号 / 槽连线的静态分析。解析 `.h` 的 `signals:` / `slots:` 声明和 QObject 子类，解析 `.cpp` 的 `QObject::connect` / `connect` / 老式 `SIGNAL` / `SLOT` 调用。输出格式：'text'（默认）、'json'（机器可读）、'dot'（Graphviz）。报告连接、孤立 signal、孤立 slot。可选 `output_file` 写结果到磁盘。
+- **`qt_input_recorder`** — 录制 / 回放鼠标 + 键盘事件做 demo、回归测试、bug 报告。用 `pyautogui` + `pynput`。输出：可移植 JSON 带 `events` 数组。Action：'record'（录 N 秒）、'playback`（按指定速度回放文件）、'info'（按类型显示事件计数）。Helpers 在 `<SANDBOX>/.tmp/input_recorder_helpers/`。
+- **`qt_translation_validate`** — 解析 Qt `.ts` 文件并报告每语言翻译覆盖率。按 `<TS language="...">` 块数 `total` / `finished` / `unfinished` / `empty` / `obsolete`。可选 `min_coverage` flag 警告低覆盖率语言。i18n QA 时有用。
 
-### Improved
+### 改进
 
-- **`qt_cheatsheet` catalog backfill** — added 14 tools that were missing from the cheatsheet catalog (qt_lint, qt_analyze, qt_input, qt_cmake, qt_docs_gen, qt_achievement, qt_undo, qt_leaderboard_ui, qt_pkg_install, qt_release_notes, qt_copyright, qt_score, qt_timer, qt_replay) plus the 8 v0.2.7 tools. Catalog now reflects all 64 tools.
-- Bug fix: `qt_signal_slot_trace` was double-counting `QObject::connect(...)` lines (matched by both the general `connect(...)` pattern and the `QObject::connect(...)` pattern). Combined into a single optional-prefix regex.
+- **`qt_cheatsheet` 目录补录** —— 加了 14 个之前在 cheatsheet 目录里漏掉的工具（qt_lint、qt_analyze、qt_input、qt_cmake、qt_docs_gen、qt_achievement、qt_undo、qt_leaderboard_ui、qt_pkg_install、qt_release_notes、qt_copyright、qt_score、qt_timer、qt_replay）加 8 个 v0.2.7 工具。目录现在反映全部 64 个工具。
+- Bug 修复：`qt_signal_slot_trace` 双重计数 `QObject::connect(...)` 行（被通用 `connect(...)` pattern 和 `QObject::connect(...)` pattern 都匹配）。合成一个可选前缀正则。
 
-### Verified
+### 已验证
 
-- All 17 e2e suites pass: 6 light + 177 full = 183 pytest tests (`pytest -m light` < 5s, `pytest -m full` ~45s).
-- 64 / 64 tools have e2e coverage.
-- 64 / 64 tools have complete Args / Returns / Raises docstrings.
-- 64 / 64 tools use `_json_footer` for machine-readable trailers (off by default).
+- 全部 17 个 e2e 套件过：6 light + 177 full = 183 个 pytest 测试（`pytest -m light` < 5s，`pytest -m full` ~45s）。
+- 64 / 64 工具有 e2e 覆盖。
+- 64 / 64 工具有完整 Args / Returns / Raises docstring。
+- 64 / 64 工具用 `_json_footer` 输出机器可读段（默认关）。
 
 ## [0.2.0] — 2026-07
 
-### Added
+### 新增
 
-- **`qt_validate`** — walk a `.pro` and verify every `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES` / `TRANSLATIONS` reference exists and is readable. Optional `strict=True` also runs XML parse on `.ui` / `.qrc` and detects duplicate entries.
-- **`qt_run_trace`** — launch a `.exe` with `QT_LOGGING_RULES` + `QT_LOGGING_TO_CONSOLE=1` and capture stdout/stderr. Use for debugging signal/slot dispatch (`qt.core.signal*=true`), QML loading, or plugin loading.
-- **`qt_smoke_test`** — end-to-end health check: clean → build (via `qt_build`) → detach-launch for N seconds → kill. Returns PASS only if all three steps succeed.
-- **`qt_diff`** — compare two `.pro` projects. Reports variables (SOURCES, HEADERS, FORMS, RESOURCES, TRANSLATIONS, DEFINES, INCLUDEPATH, LIBS) that differ, source files only in A or only in B, and SHA1 mismatches among common files. `show_identical=True` also lists files with matching SHA1.
-- **`qt_pkg`** — list / inspect installed Qt 5 modules. Walks `QT_ROOT/include/Qt*` + `lib/cmake/Qt5*`, reports headers/libs/version for a single module, lists all 76+ modules in default mode, and enumerates plugins under `QT_ROOT/plugins/`.
-- **`qt_log`** — filter / analyze a Qt log file. Counts lines by level (debug / warning / critical / fatal / info), extracts `qt.*` category counts, supports `category_filter` and `level_filter` substring matching, and caps output via `max_lines`.
-- **`qt_state`** — QSettings wrapper for persistent app state. `save` / `load` / `delete` / `list` / `clear` actions on a per-organization / per-application basis. Writes to OS-native QSettings location (APPDATA on Windows, `~/.config` on Linux). Useful for board-game save/load, settings persistence, replay data.
-- **`qt_assets`** — scan a directory of asset files (images, audio) and emit a `.qrc` + optional `qrc_<name>.cpp` with `Q_INIT_RESOURCE`. Supports recursive scan, exclude patterns, custom extensions, and per-subdirectory grouping in the .qrc output.
-- **`qt_watch`** — auto-rebuild on file change. Uses the `watchdog` library to subscribe to filesystem events, debounces rapid changes (default 1.5s), and calls `qt_build` on each batch. Returns the PID of the watcher process; use `qt_kill_exe` to stop.
-- **`qt_signature`** — sign / verify Windows executables via signtool.exe. Actions: 'info' (locate signtool), 'sign' (apply Authenticode + RFC 3161 timestamp), 'verify' (check existing signature), 'timestamp' (re-timestamp an already-signed file). Auto-discovers signtool.exe under `C:\Program Files\Windows Kits\10\bin\*\x64\`.
-- **`qt_save`** — save / load / list / delete / inspect JSON save files for board-game portability. Different from `qt_state` (QSettings native format): `qt_save` writes plain JSON, easy to inspect with `cat save.json | jq` and sync across machines.
-- **`qt_audio`** — list / probe / play sound-effect files. Reports QtMultimedia availability, scans audio directories, identifies format from file header, and emits a QSoundEffect / QMediaPlayer C++ snippet ready to drop in your game.
-- **`qt_anim`** — generate QPropertyAnimation code (fade / move / scale / rotate / color / sequence). Output is a ready-to-paste C++ snippet with start / end values, duration, easing curve, optional loop.
-- **`qt_network`** — generate a `.h` / `.cpp` pair for a Qt network class (QTcpSocket client / QTcpServer / QUdpSocket peer / QWebSocket client). Configure host, port, and class name; output goes to your `output_dir` ready to add to the .pro.
-- **`qt_coverage`** — collect code coverage via gcov + lcov. Injects `--coverage` flags into the .pro, builds, (optionally) runs tests, then runs `lcov --capture` + `genhtml`. Restores the .pro on exit. Produces an HTML report at `<output>/html/index.html`.
-- **`qt_cheatsheet`** — print a categorized quick reference of all qt-mcp tools (env / scaffold / build / run / validate / creator / analysis). Pass `tool_name` for detailed help on one tool, or `category` to filter.
-- **`qt_score`** — track and rank player scores for board games. add / list / leaderboard (top-N ranked) / reset / import / export. Backed by `<SANDBOX>/.scores/scores.json`.
-- **`qt_timer`** — start / stop / pause / resume named timers (game clock, turn timer, total game time). State persisted to `<SANDBOX>/.timers/timers.json`. Useful for time-controlled turn-based games.
-- **`qt_replay`** — step-by-step game replay system. record / save / load / list / play / delete. Each step has `n` / `type` / `data` / `ts`. Backed by per-session JSON in `<SANDBOX>/.replays/`.
-- **`qt_lint`** — unified lint wrapper. Run cpplint + qmllint + clang-tidy over a project. Returns `LINT PASS` / `LINT FAIL` with per-linter summary.
-- **`qt_analyze`** — clang-tidy deep analysis with custom check selection (e.g. `bugprone-*,performance-*`). Supports `text` / `json` output.
-- **`qt_input`** — generate keyboard / mouse / gamepad input handling code. 'keyboard' emits QShortcut + QKeySequence + slot declaration. 'mouse' emits mousePressEvent / mouseMoveEvent / mouseReleaseEvent overrides. 'gamepad' emits a QGamepad wrapper (with Qt6 SDL2 fallback note). 'focus' emits tab order / focus chain. 'mapping' writes a JSON bindings file.
-- **`qt_cmake`** — generate a CMakeLists.txt for a Qt project. Supports find_package(Qt5) or find_package(Qt6), AUTOMOC / AUTORCC / AUTOUIC, C++17, templates for `app` / `library` / `console`. Migrates projects from qmake to CMake.
-- **`qt_docs_gen`** — generate a Doxyfile for a Qt project and (optionally) run doxygen to produce HTML docs. Defaults to EXTRACT_ALL, source browser, call graphs. Useful for keeping API documentation in sync with code.
-- **`qt_achievement`** — manage game achievements / medals. 'define' (add an achievement to the catalog), 'grant' (mark as earned), 'list' (show all achievements with current progress for a player), 'progress' (update current count for multi-step achievements), 'reset' (clear all earned for a player), 'catalog' (show all defined).
-- **`qt_undo`** — push / undo / redo game-state snapshots per project. Stack persisted to JSON, max depth configurable. Returns state in JSON trailer for programmatic use.
-- **`qt_leaderboard_ui`** — generate a leaderboard widget (.h + .cpp + .ui trio). Two styles: 'table' (QTableView with sort/filter) and 'cards' (QListView with card delegate). Reads from `<SANDBOX>/.scores/scores.json` (produced by qt_score).
-- **`qt_pkg_install`** — wrapper around `aqt` (https://github.com/miurahr/aqtinstall) for installing / listing / uninstalling Qt SDKs. Supports Qt 5.14.2 / 6.x on windows / linux / mac.
-- **`qt_release_notes`** — auto-generate a CHANGELOG.md section from `git log` (conventional-commits prefix detection) or manually add bullets under Unreleased.
-- **`qt_copyright`** — prepend a license header (default MIT) to every source file in a project. Skips files with existing SPDX markers, supports dry_run.
-- **56 tools total** (was 26 in v0.1.0). All 56 have full Args/Returns/Raises docstrings. All 56 are covered by e2e tests.
-- **`__version__ = "0.2.0"`** on the module.
-- **`def main() -> int`** entry point. `python -m server` and the `qt-mcp` console script both work.
-- **`_json_footer(obj)`** helper + `QT_MCP_JSON=1` env-var gate: when set, every tool appends a `--- json ---\n{ok,data|error}` trailer. Applied to **all 34 tools** (141 string-return statements wrapped across single + multi-line returns); preserved e2e string contracts because the helper returns `""` by default. Off by default.
-- **Env-overridable paths**: `QT_MCP_QT_ROOT`, `QT_MCP_QT_32_ROOT`, `QT_MCP_MINGW_BIN`, `QT_MCP_QTCREATOR`, `QT_MCP_SANDBOX`, `QT_MCP_QT_VERSION`. Defaults preserve the original Windows layout.
-- **`pytest.ini`** — discover every `e2e_*.py` in `tests/light/` and `tests/full/` as a pytest test module. Auto-marks tests by directory: `light` = no Qt SDK needed, `full` = Qt SDK required. CI runs `pytest -m light` for fast PR gating. No pytest required for the e2e scripts (each calls `sys.exit(0 | 1)`).
-- **`pyproject.toml`** — installable via `pip install .`, exposes the `qt-mcp` console script.
-- **`.github/workflows/ci.yml`** — Windows-latest CI that runs `pytest -v` against the lightweight test subset. Heavyweight Qt-SDK tests are excluded from CI (they need the full 5 GB Qt install).
-- **`.github/ISSUE_TEMPLATE/`** (bug + feature) and **`PULL_REQUEST_TEMPLATE.md`**.
-- **`tests/light/` + `tests/full/`** — e2e scripts split into "no Qt SDK" (parsers, helpers, sandbox rejection) and "needs Qt SDK" (build/run) tiers. Conftest.py auto-marks by directory.
-- **`examples/minimal/`** — minimal runnable example (console_app template + a `.mcp.json` that points at it).
-- **`docs_data/README.md`** — explains how to rebuild the 53 MB FTS5 docs index.
+- **`qt_validate`** — 遍历 `.pro`，校验每个 `SOURCES` / `HEADERS` / `FORMS` / `RESOURCES` / `TRANSLATIONS` 引用存在且可读。可选 `strict=True` 也跑 XML 解析 `.ui` / `.qrc` 并检测重复条目。
+- **`qt_run_trace`** — 用 `QT_LOGGING_RULES` + `QT_LOGGING_TO_CONSOLE=1` 启动 `.exe` 并捕获 stdout/stderr。用来 debug signal/slot 派发（`qt.core.signal*=true`）、QML 加载、插件加载。
+- **`qt_smoke_test`** — 端到端健康检查：clean → build（通过 `qt_build`）→ 后台启动 N 秒 → kill。仅当三步都成功才返回 PASS。
+- **`qt_diff`** — 比较两个 `.pro` 项目。报告有差异的变量（SOURCES、HEADERS、FORMS、RESOURCES、TRANSLATIONS、DEFINES、INCLUDEPATH、LIBS），仅在 A 或仅在 B 的源文件，以及共文件中 SHA1 不匹配的。`show_identical=True` 也列出 SHA1 匹配的文件。
+- **`qt_pkg`** — 列出 / 检查已装 Qt 5 模块。遍历 `QT_ROOT/include/Qt*` + `lib/cmake/Qt5*`，报告单模块的 headers/libs/version，默认模式下列出全部 76+ 模块，枚举 `QT_ROOT/plugins/` 下的插件。
+- **`qt_log`** — 过滤 / 分析 Qt log 文件。按级别（debug / warning / critical / fatal / info）数行数，提取 `qt.*` 类别计数，支持 `category_filter` 和 `level_filter` 子串匹配，通过 `max_lines` 截断。
+- **`qt_state`** — QSettings 包装做持久化 app 状态。按 organization / application 的 `save` / `load` / `delete` / `list` / `clear` action。写到 OS-native QSettings 位置（Windows APPDATA，Linux `~/.config`）。棋牌存档/读档、设置持久化、回放数据时有用。
+- **`qt_assets`** — 扫 asset 文件目录（图片、音频）并输出 `.qrc` + 可选 `qrc_<name>.cpp` 带 `Q_INIT_RESOURCE`。支持递归扫、排除 pattern、自定义扩展名、.qrc 输出中按子目录分组。
+- **`qt_watch`** — 文件变更自动重编译。用 `watchdog` 库订阅文件系统事件，对快速变更 debounce（默认 1.5s），每批调 `qt_build`。返回 watcher 进程的 PID；用 `qt_kill_exe` 停。
+- **`qt_signature`** — 通过 signtool.exe 签 / 验 Windows 可执行文件。Action：'info'（找 signtool）、'sign'（应用 Authenticode + RFC 3161 timestamp）、'verify'（查已有签名）、'timestamp'（对已签文件再加 timestamp）。在 `C:\Program Files\Windows Kits\10\bin\*\x64\` 下自动发现 signtool.exe。
+- **`qt_save`** — 棋牌可移植性的 JSON 存档文件 save / load / list / delete / inspect。不同于 `qt_state`（QSettings 原生格式）：`qt_save` 写纯 JSON，便于 `cat save.json | jq` 检查和跨机器同步。
+- **`qt_audio`** — 音效文件 list / probe / play。报告 QtMultimedia 可用性、扫音频目录、从文件头识别格式、输出可拖到游戏里的 QSoundEffect / QMediaPlayer C++ 片段。
+- **`qt_anim`** — 生成 QPropertyAnimation 代码（fade / move / scale / rotate / color / sequence）。输出 ready-to-paste 的 C++ 片段，带 start / end 值、duration、easing curve、可选 loop。
+- **`qt_network`** — 为 Qt 网络类生成 `.h` / `.cpp` 对（QTcpSocket client / QTcpServer / QUdpSocket peer / QWebSocket client）。配 host、port 和类名；输出到 `output_dir` 即可加进 .pro。
+- **`qt_coverage`** — 通过 gcov + lcov 收集代码覆盖率。把 `--coverage` flag 注入 .pro，构建，（可选）跑测试，然后跑 `lcov --capture` + `genhtml`。退出时还原 .pro。生成 `<output>/html/index.html` 的 HTML 报告。
+- **`qt_cheatsheet`** — 打印所有 qt-mcp 工具的分类速查（env / scaffold / build / run / validate / creator / analysis）。传 `tool_name` 拿单个工具的详细帮助，或 `category` 过滤。
+- **`qt_score`** — 棋牌玩家分数追踪和排行。add / list / leaderboard（top-N 排行）/ reset / import / export。后端 `<SANDBOX>/.scores/scores.json`。
+- **`qt_timer`** — 启 / 停 / 暂停 / 恢复命名 timer（游戏时钟、回合 timer、总游戏时长）。状态持久到 `<SANDBOX>/.timers/timers.json`。有时间限制的回合制游戏时有用。
+- **`qt_replay`** — 棋牌走子回放系统。record / save / load / list / play / delete。每步带 `n` / `type` / `data` / `ts`。后端是 `<SANDBOX>/.replays/` 下的每会话 JSON。
+- **`qt_lint`** — 统一 lint 包装。在项目上跑 cpplint + qmllint + clang-tidy。返回 `LINT PASS` / `LINT FAIL` 带每 linter 摘要。
+- **`qt_analyze`** — clang-tidy 深度分析，支持自定义 check 选择（如 `bugprone-*,performance-*`）。支持 `text` / `json` 输出。
+- **`qt_input`** — 生成键盘 / 鼠标 / 手柄输入处理代码。'keyboard' 输出 QShortcut + QKeySequence + slot 声明。'mouse' 输出 mousePressEvent / mouseMoveEvent / mouseReleaseEvent override。'gamepad' 输出 QGamepad 包装（带 Qt6 SDL2 fallback 注）。'focus' 输出 tab order / focus chain。'mapping' 写 JSON bindings 文件。
+- **`qt_cmake`** — 为 Qt 项目生成 CMakeLists.txt。支持 find_package(Qt5) 或 find_package(Qt6)、AUTOMOC / AUTORCC / AUTOUIC、C++17、`app` / `library` / `console` 模板。从 qmake 迁到 CMake。
+- **`qt_docs_gen`** — 为 Qt 项目生成 Doxyfile，（可选）跑 doxygen 生成 HTML 文档。默认 EXTRACT_ALL、源码浏览器、调用图。让 API 文档与代码同步。
+- **`qt_achievement`** — 管理游戏成就 / 徽章。'define'（加一个成就到目录）、'grant'（标记已获得）、'list'（显示玩家所有成就当前进度）、'progress'（更新多步成就当前计数）、'reset'（清玩家已获）、'catalog'（显示所有定义）。
+- **`qt_undo`** — 按项目 push / undo / redo 游戏状态快照。栈持久到 JSON，max depth 可配。返回 JSON 段里状态供程序用。
+- **`qt_leaderboard_ui`** — 生成排行榜 widget（.h + .cpp + .ui 三件套）。两种风格：'table'（QTableView 带 sort/filter）和 'cards'（QListView 带 card delegate）。读自 `<SANDBOX>/.scores/scores.json`（由 qt_score 生成）。
+- **`qt_pkg_install`** — `aqt`（https://github.com/miurahr/aqtinstall）包装装 / 列 / 卸 Qt SDK。支持 Qt 5.14.2 / 6.x 在 windows / linux / mac。
+- **`qt_release_notes`** — 从 `git log` 自动生成 CHANGELOG.md 段（conventional-commits 前缀识别）或在 Unreleased 下手动加 bullets。
+- **`qt_copyright`** — 给项目里每个源文件 prepend license header（默认 MIT）。跳过已有 SPDX marker 的文件，支持 dry_run。
+- **共 56 个工具**（v0.1.0 时 26）。所有 56 个有完整 Args / Returns / Raises docstring。所有 56 个由 e2e 测试覆盖。
+- **`__version__ = "0.2.0"`** 在模块上。
+- **`def main() -> int`** 入口。`python -m server` 和 `qt-mcp` 控制台脚本都能用。
+- **`_json_footer(obj)`** helper + `QT_MCP_JSON=1` 环境变量开关：设了之后，每个工具追加 `--- json ---\n{ok,data|error}` 段。应用到**全部 34 个工具**（141 处返回字符串被包了，单行 + 多行都有）；保留 e2e 字符串契约因为 helper 默认返回 `""`。默认关。
+- **环境变量可覆盖路径**：`QT_MCP_QT_ROOT`、`QT_MCP_QT_32_ROOT`、`QT_MCP_MINGW_BIN`、`QT_MCP_QTCREATOR`、`QT_MCP_SANDBOX`、`QT_MCP_QT_VERSION`。默认值保留原 Windows 布局。
+- **`pytest.ini`** —— 发现 `tests/light/` 和 `tests/full/` 下每个 `e2e_*.py` 作为 pytest 测试模块。按目录自动 mark 测试：light = 不需要 Qt SDK，full = 需要 Qt SDK。CI 跑 `pytest -m light` 做快速 PR gate。e2e 脚本不需要 pytest（每个调 `sys.exit(0 | 1)`）。
+- **`pyproject.toml`** —— 可通过 `pip install .` 装，暴露 `qt-mcp` 控制台脚本。
+- **`.github/workflows/ci.yml`** —— Windows-latest CI 跑 `pytest -v` 对轻量测试子集。重 Qt-SDK 测试被 CI 排除（需要完整 5 GB Qt 安装）。
+- **`.github/ISSUE_TEMPLATE/`**（bug + feature）和 **`PULL_REQUEST_TEMPLATE.md`**。
+- **`tests/light/` + `tests/full/`** —— e2e 脚本拆成"无 Qt SDK"（解析器、helpers、沙箱拒绝）和"需要 Qt SDK"（build/run）两层。Conftest.py 按目录自动 mark。
+- **`examples/minimal/`** —— 最小可运行示例（console_app 模板 + 指向它的 `.mcp.json`）。
+- **`docs_data/README.md`** —— 解释怎么重建 53 MB FTS5 docs 索引。
 
-### Changed
+### 变更
 
-- **`qt_clean`** now delegates to a new `_clean_artifacts(proj)` helper so `qt_smoke_test` can reuse the cleanup logic.
-- **`qt_test`** now uses a new `_pe_bits(exe)` helper to pick 32-bit vs 64-bit Qt bin dir. The helper is also used by `qt_run_trace` and `qt_smoke_test` — single source of truth for the PE-header heuristic.
-- **README.md** rewritten: 29-tool table, badges, expanded environment variables table, programmatic output (JSON trailers) section, Development section.
+- **`qt_clean`** 现在 delegate 给新的 `_clean_artifacts(proj)` helper，让 `qt_smoke_test` 能复用清理逻辑。
+- **`qt_test`** 现在用新的 `_pe_bits(exe)` helper 选 32-bit vs 64-bit Qt bin 目录。该 helper 也被 `qt_run_trace` 和 `qt_smoke_test` 用 —— PE-header 启发式的单一真相源。
+- **README.md** 重写：29 工具表、badge、扩展的环境变量表、程序化输出（JSON 段）段、Development 段。
 
-### Fixed
+### 修复
 
-- e2e `e2e_new_tools_v3.py` hard-coded `len(tools) == 23`; loosened to `>= 23` so adding v4 / v5 tools does not break the test.
+- e2e `e2e_new_tools_v3.py` 硬编码 `len(tools) == 23`；放宽到 `>= 23`，加 v4 / v5 工具时不再破坏测试。
 
-## [0.1.0] — 2026-07 (initial)
+## [0.1.0] — 2026-07 (初始)
 
-- 26 MCP tools covering the full Qt C++ lifecycle.
-- 9 scaffold templates (widget / mainwindow / dialog / qml_app / console_app / cards_game / chess_game / generic_game / game_framework).
-- 8 e2e test suites, all passing.
-- Local FTS5 docs index (`docs_data/qt_5_14_2_docs.db`, 53 MB, gitignored).
-- AI-friendly structured build diagnostics with one-line fix suggestions.
-- UI automation (`qt_ui_action`) and Qt Creator driving (`qt_creator_open` / `qt_creator_run`).
+- 26 个 MCP 工具覆盖完整 Qt C++ 生命周期。
+- 9 个脚手架模板（widget / mainwindow / dialog / qml_app / console_app / cards_game / chess_game / generic_game / game_framework）。
+- 8 个 e2e 测试套件，全过。
+- 本地 FTS5 docs 索引（`docs_data/qt_5_14_2_docs.db`，53 MB，gitignored）。
+- AI 友好的结构化 build 诊断，带一行修复建议。
+- UI automation（`qt_ui_action`）和 Qt Creator 驱动（`qt_creator_open` / `qt_creator_run`）。
