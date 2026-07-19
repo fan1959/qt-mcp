@@ -1,9 +1,8 @@
-# Demo screenshots
+# 演示截图
 
-This directory holds PNGs from real `qt-mcp` runs.
+这个目录存放真实 `qt-mcp` 运行的 PNG。
 
-The screenshots in this directory are produced by re-running the walkthrough
-in [`../README.md`](../README.md). Each one is captured by:
+每张截图通过重跑 [`../README.md`](../README.md) 里的走查步骤产出，调用方式：
 
 ```python
 await server.qt_ui_action(QtUIActionInput(
@@ -12,34 +11,30 @@ await server.qt_ui_action(QtUIActionInput(
 ))
 ```
 
-The tool uses `pywinauto.capture_as_image()` (Windows `PrintWindow`) so the
-PNG is a true capture of the Qt window — even when other windows occlude it.
+工具用 `pywinauto.capture_as_image()`（Windows `PrintWindow`），所以 PNG 是 Qt 窗口的真正截图——即使其他窗口遮挡它也能拍清楚。
 
-## What each screenshot shows (canonical run)
+## 标准运行下的截图含义
 
-| File | What it shows | How it was produced |
+| 文件 | 内容 | 怎么拍的 |
 |---|---|---|
-| `step_1_diagnose.png` | `qt_diagnose_env deep=true` text output | (terminal screenshot) |
-| `step_2_scaffold.png` | Files written by `qt_scaffold mainwindow` | (file explorer or terminal `tree`) |
-| `step_3_class_wizard.png` | Generated `Counter` class files | (terminal `ls`) |
-| `step_4_build_ok.png` | `qt_build` tail with "Build OK" | (terminal screenshot) |
-| `step_5_counter_running.png` | The Counter window, mid-tick, with `Count: 33` | `qt_ui_action screenshot` |
-| `step_6_smoke_pass.png` | `qt_smoke_test` final verdict | (terminal screenshot) |
+| `step_1_diagnose.png` | `qt_diagnose_env deep=true` 的文本输出 | （终端截图） |
+| `step_2_scaffold.png` | `qt_scaffold mainwindow` 写出的文件 | （资源管理器或终端 `tree`） |
+| `step_3_class_wizard.png` | 生成的 `Counter` 类文件 | （终端 `ls`） |
+| `step_4_build_ok.png` | `qt_build` 末尾 "Build OK" | （终端截图） |
+| `step_5_counter_running.png` | Counter 窗口，tick 中，显示 `Count: 33` | `qt_ui_action screenshot` |
+| `step_6_smoke_pass.png` | `qt_smoke_test` 最终结论 | （终端截图） |
 
-## Existing reference screenshots
+## 已有的参考截图
 
-Real screenshots from the Jul 8 development session are kept in
-`E:\Download_tools\QT\Files\qt_mcp_demo\` for historical reference. They are
-not bundled with the qt-mcp source tree because they reference the user's
-local Qt install path.
+Jul 8 开发期的真实截图保留在 `E:\Download_tools\QT\Files\qt_mcp_demo\`，作为历史参考。它们不打包进 qt-mcp 源码树，因为引用了用户本地的 Qt 安装路径。
 
-## Re-capturing
+## 重新拍摄
 
 ```bash
-# Terminal 1
+# 终端 1
 python -m server
 
-# Terminal 2 (Claude Code or raw MCP client)
+# 终端 2（Claude Code 或原始 MCP 客户端）
 qt_scaffold(template="mainwindow", output_dir="...")
 qt_build(project_dir="...")
 qt_run(executable="...", detach=True)
