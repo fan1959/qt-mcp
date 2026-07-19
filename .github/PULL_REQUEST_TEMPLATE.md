@@ -1,29 +1,29 @@
-## Summary
+## 摘要
 
-<!-- 1-3 bullet points. What changed and why. -->
+<!-- 1-3 条要点。改了什么，为什么。 -->
 
-## Type of change
+## 类型
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New tool (additive — new `@mcp.tool` in `server.py`)
-- [ ] New scaffold template (additive — new entry in `ScaffoldTemplate` enum)
-- [ ] Documentation / CI / repo meta change (no production code touched)
-- [ ] Refactor (no behavior change)
-- [ ] Breaking change (existing e2e string contracts may shift — call this out!)
+- [ ] Bug 修复（不改行为的 bug 修复）
+- [ ] 新工具（新增 `@mcp.tool` 进 `server.py`）
+- [ ] 新脚手架模板（新增 `ScaffoldTemplate` enum 的条目）
+- [ ] 文档 / CI / 仓库 meta（没动生产代码）
+- [ ] 重构（无行为变更）
+- [ ] 破坏性变更（已有 e2e 字符串契约可能变 —— **必须**在这里说明！）
 
-## How was it tested?
+## 怎么测的？
 
-<!-- Paste the e2e / pytest output, or describe the manual GUI run. -->
+<!-- 贴 e2e / pytest 输出，或描述手动 GUI 跑法。 -->
 
-## Checklist
+## 检查清单
 
-- [ ] I added at least one new test (`e2e_new_tools_vN.py`) — or explained why not
-- [ ] The new test passes locally (`python e2e_new_tools_vN.py`)
-- [ ] I did NOT change any string output that an existing e2e test asserts on (or I did and called it out above)
-- [ ] `server.py` is still ≤ 4800 lines (currently around 4700)
-- [ ] I updated `CHANGELOG.md` if this is user-visible
-- [ ] I updated `README.md` tool table if I added/removed a tool
+- [ ] 我加了至少一个新测试（`e2e_new_tools_vN.py`）—— 或说明了不加的理由
+- [ ] 新测试本地全 PASS（`python e2e_new_tools_vN.py`）
+- [ ] 我**没**改任何已有 e2e 测试断言的字符串输出（若改了，已在上面说明）
+- [ ] `server.py` 仍然 ≤ 4800 行（目前约 4700 行）
+- [ ] 如果对用户可见，更新了 `CHANGELOG.md`
+- [ ] 如果加了/删了工具，更新了 `README.md` 的工具表
 
-## Related issues
+## 相关 issue
 
-<!-- Link to the issue this closes. Use `Closes #42` syntax. -->
+<!-- 关联到关闭的 issue。用 `Closes #42` 语法。 -->
